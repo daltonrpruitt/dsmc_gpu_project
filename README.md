@@ -1,4 +1,9 @@
+# DSMC GPU Implementation Project
+Project for Parallel and Distributed Scientific Computing DIS at Mississippi 
+State University. 
 
+
+## Original description given with starter code
 Example Direct Simulation Monte Carlo (DSMC) program.  Use this
 program as a guide to your parallel implementation.  You may use this
 code if you wish, but it is also desirable if you find other more
