@@ -112,13 +112,15 @@ void moveParticlesWithBCs(list<particle> &particleList, float deltaT) {
        (pos.x > plate_x && npos.x < plate_x)) {
       // It passes through the plane of the plate, now
       // check if it actually hits the plate
-      double t = (pos.x-plate_x)/(pos.x-npos.x) ;
-      vect3d pt = pos*(1.-t)+npos*t ;
+      double t = (pos.x-plate_x)/(pos.x-npos.x) ; // fraction of timestep to hit plate
+      vect3d pt = pos*(1.-t)+npos*t ; // interpolated position at time t
       if((pt.y < plate_dy && pt.y > -plate_dy) &&
          (pt.z < plate_dz && pt.z > -plate_dz)) {
            // collides with plate
            // adjust position and velocity (specular reflection)
-           npos.x = npos.x - 2*(npos.x-plate_x) ;
+           npos.x = npos.x - 2*(npos.x-plate_x) ; 
+           // why 2 and not some function of t? b/c is calculating new npos, not pos,
+           //   so has to get back to plate, then keeps moving the same amount in new new direction
            ii->vel.x = -ii->vel.x ; // Velocity just reflects along x direction
            ii->type = 2 ;
       }
@@ -410,6 +412,7 @@ int main(int ac, char *av[]) {
   float deltaT = .1*deltax/(vmean+vtemp) ;
 
   // If time duration not given, simulate for 4 free-stream flow-through times 
+  // DWP: Free stream = the stream that is free from obstacles, i.e. ignoring plate?
   if(time < 0)
     time = 8./(vmean+vtemp) ;
 
