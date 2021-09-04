@@ -1,0 +1,15 @@
+
+Example Direct Simulation Monte Carlo (DSMC) program.  Use this
+program as a guide to your parallel implementation.  You may use this
+code if you wish, but it is also desirable if you find other more
+efficient implementations.  The code outputs particles and average cell data
+files in the files particles.dat and cells.dat.  A helper program, pextract,
+is provided that can extract the particle data to allow it to be plotted using
+a 2-D plotting package.
+
+The program can be run in either 2D or 3D modes.  By default it solves
+in the 3-d mode with 32x32x32 grid and about 10 particles per cell at
+the inflow.  The goal is to solve on at least a 128x128x128 grid using
+a parallel implementation.
+
+
