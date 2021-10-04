@@ -4,14 +4,36 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build dsmc",
-            "type": "build",
-            "command": "g++",
+            "type": "process",
+            "label": "Make dsmc_gpu",
+            "command": "make",
             "args": [
-                "${workspaceFolder}/dsmc.cpp",
-                "-I.",
-                "-o dsmc.out"
-            ]
-        }
+                "dsmc_gpu"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "make should use compiler: /apps/gcc-8.3.0/gcc-8.3.0/bin/cpp"
+        },
+        {
+            "type": "process",
+            "label": "Make dsmc_orig",
+            "command": "make",
+            "args": [
+                "dsmc_orig"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "make should use compiler: /apps/gcc-8.3.0/gcc-8.3.0/bin/cpp"
+        },
     ]
 }
