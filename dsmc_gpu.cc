@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include <list>
+// #include <list>
 #include <vector>
 #include <stdlib.h>
 
