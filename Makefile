@@ -13,12 +13,11 @@ load = source $$MODULESHOME/init/bash; module load cuda/11.0.3; module load gcc/
 
 all: $(main)
 
-$(main): $(main).cc 
-	$(CXX) $(CUDAFLAGS) $(CUDADEBUGFLAGS) $(include_flags) -o bin/$@ $(CPPFLAGS) $^
+	$(load) $(CXX) $(CUDAFLAGS) $(CUDADEBUGFLAGS) $(include_flags) -o bin/$@ $(CPPFLAGS) $(CPPDEBUGFLAGS) $^
  
 
 dsmc_orig: 	dsmc_orig.cc
-	$(CXX) $(CUDAFLAGS) $(include_flags)  -o bin/$@  $(CPPFLAGS)  $^
+	$(CXX) $(CUDAFLAGS) $(include_flags)  -o bin/$@  $(CPPFLAGS) $(CPPDEBUGFLAGS) $^
 
 
 clean:
