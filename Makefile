@@ -4,7 +4,7 @@ CXX = nvcc
 include_flags = -I.
 CUDAFLAGS = -arch=sm_35
 CUDADEBUGFLAGS = --generate-line-info
-CPPFLAGS =  -std=c++11 --compiler-options -Wall
+CPPFLAGS =  -std=c++14 --compiler-options -Wall
 CPPDEBUGFLAGS = -g
 
 main = dsmc_gpu
