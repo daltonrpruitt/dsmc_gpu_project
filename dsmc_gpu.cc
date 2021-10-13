@@ -47,7 +47,7 @@ inline double randVel(double vmp) {
 // Create particles at inflow boundary
 // This works by creating particles at a ghost cell just before the boundary
 // any particles that don't make it into the domain are discarded.
-void initializeBoundaries(list<particle> &particleList,
+void initializeBoundaries(vector<particle> &particleVec,
                           int ni, int nj, int nk,
                           float vmean, float vtemp,int mppc) {
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
@@ -66,7 +66,7 @@ void initializeBoundaries(list<particle> &particleList,
         p.vel.x += vmean ;
         p.type = 0 ;
         p.index = 0 ;
-        particleList.push_back(p) ;
+        particleVec.push_back(p) ;
       }
     }
 }
@@ -74,11 +74,11 @@ void initializeBoundaries(list<particle> &particleList,
 
 // Move particle for the timestep.  Also handle side periodic boundary
 // conditions and specular reflections off of a plate 
-void moveParticlesWithBCs(list<particle> &particleList, float deltaT) {
-  list<particle>::iterator ii ;
+void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
+  vector<particle>::iterator ii ;
 
   // Loop over particles
-  for(ii=particleList.begin();ii!=particleList.end();++ii) {
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     // position before and after timestep
     vect3d pos = ii->pos ;
     vect3d npos = pos+ii->vel*deltaT ;
@@ -121,14 +121,12 @@ void moveParticlesWithBCs(list<particle> &particleList, float deltaT) {
 // After moving particles, any particles outside of the cells need to be
 // discarded as they cannot be indexed.  Since this can happen only at the
 // x=-1 or x=1 boundaries, we only need to check the x coordinate
-void removeOutsideParticles(list<particle> &particleList) {
-  list<particle>::iterator ii,iin ;
+void removeOutsideParticles(vector<particle> &particleVec) {
+  vector<particle>::iterator ii,iin ;
   
-  for(ii=particleList.begin();ii!=particleList.end();) {
-    iin = ii ;
-    iin++ ;
+  for(ii=particleVec.begin();ii!=particleVec.end();) {
     if(ii->pos.x < -1 || ii->pos.x > 1) { // Outside domain so remove
-      particleList.erase(ii) ;
+      particleVec.erase(ii) ;
     }
     ii = iin ;
   }
@@ -137,11 +135,11 @@ void removeOutsideParticles(list<particle> &particleList) {
 
 // Compute the cell index of each particle, for a regular Cartesian grid
 // this can be computed directly from the coordinates
-void indexParticles(list<particle> &particleList, int ni, int nj, int nk) {
+void indexParticles(vector<particle> &particleVec, int ni, int nj, int nk) {
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  list<particle>::iterator ii,iin ;
+  vector<particle>::iterator ii,iin ;
   
-  for(ii=particleList.begin();ii!=particleList.end();++ii) {
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     // For a Cartesian grid, the mapping from cell to particle is trivial
     int i = min(int(floor((ii->pos.x+1.0)/dx)),ni-1) ;
     int j = min(int(floor((ii->pos.y+1.0)/dy)),nj-1) ;
@@ -162,9 +160,9 @@ void initializeSample(vector<cellSample> &cellSample) {
 // Sum particle information to cell samples, this will be used to compute
 // collision probabilities
 void sampleParticles(vector<cellSample> &cellData, 
-                     const list<particle> &particleList) {
-  list<particle>::const_iterator ii ;
-  for(ii=particleList.begin();ii!=particleList.end();++ii) {
+                     const vector<particle> &particleVec) {
+  vector<particle>::const_iterator ii ;
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     int i = ii->index ;
     cellData[i].nparticles++ ;
     cellData[i].vel += ii->vel ;
@@ -174,7 +172,7 @@ void sampleParticles(vector<cellSample> &cellData,
   
 
 // Compute particle collisions
-void collideParticles(list<particle> &particleList,
+void collideParticles(vector<particle> &particleVec,
                       vector<collisionInfo> &collisionData,
                       const vector<cellSample> &cellData,
                       int nsample, float cellvol, float deltaT) {
@@ -187,8 +185,8 @@ void collideParticles(list<particle> &particleList,
     np[i] = 0 ;
     cnt[i] = 0 ;
   }
-  list<particle>::iterator ii ;
-  for(ii=particleList.begin();ii!=particleList.end();++ii) {
+  vector<particle>::iterator ii ;
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     int i = ii->index ;
     np[i]++ ;
   }
@@ -202,7 +200,7 @@ void collideParticles(list<particle> &particleList,
   // since there may be many particles per cell, the offsets need to
   // be used to access particles from this data structure.
   vector<particle *> pmap(offsets[ncells]) ;
-  for(ii=particleList.begin();ii!=particleList.end();++ii) {
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     int i = ii->index ;
     pmap[cnt[i]+offsets[i]] = &(*ii) ;
     cnt[i]++ ;
@@ -379,7 +377,7 @@ int main(int ac, char *av[]) {
   pnum = density*cellvol/float(mppc) ;
 
   // Create simulation data structures 
-  list<particle> particleList ;
+  vector<particle> particleVec ;
   vector<cellSample> cellData(ni*nj*nk) ;
   vector<collisionInfo> collisionData(ni*nj*nk) ;
 
@@ -408,14 +406,14 @@ int main(int ac, char *av[]) {
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
     // Add particles at inflow boundaries
-    initializeBoundaries(particleList,ni,nj,nk,vmean,vtemp,mppc) ;
+    initializeBoundaries(particleVec,ni,nj,nk,vmean,vtemp,mppc) ;
     // Move particles
-    moveParticlesWithBCs(particleList,deltaT) ;
+    moveParticlesWithBCs(particleVec,deltaT) ;
     // Remove any particles that are now outside of boundaries
-    removeOutsideParticles(particleList) ;
+    removeOutsideParticles(particleVec) ;
     // Compute cell index for particles based on their current
     // locations
-    indexParticles(particleList,ni,nj,nk) ;
+    indexParticles(particleVec,ni,nj,nk) ;
     // If time to reset cell samples, reinitialize data
     if(n%sample_reset == 0 ) {
       initializeSample(cellData) ;
@@ -423,21 +421,21 @@ int main(int ac, char *av[]) {
     }
     // Sample particle information to cells
     nsample++ ;
-    sampleParticles(cellData,particleList) ;
+    sampleParticles(cellData,particleVec) ;
     // Compute particle collisions
-    collideParticles(particleList,collisionData,cellData,nsample,
+    collideParticles(particleVec,collisionData,cellData,nsample,
                      cellvol,deltaT) ;
     // print out progress
     if((n&0xf) == 0) {
-      cout << n << ' ' << particleList.size() << endl ;
+      cout << n << ' ' << particleVec.size() << endl ;
     }
   }
 
   // Write out final particle data
   ofstream ofile("particles.dat",ios::out) ;
-  list<particle>::iterator ii ;
+  vector<particle>::iterator ii ;
 
-  for(ii=particleList.begin();ii!=particleList.end();++ii) {
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     ofile << ii->pos.x << ' ' << ii->pos.y << ' ' << ii ->pos.z << ' ' << ii->type << endl ;
   }
 
