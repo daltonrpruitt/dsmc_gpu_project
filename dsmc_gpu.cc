@@ -125,10 +125,15 @@ void removeOutsideParticles(vector<particle> &particleVec) {
   vector<particle>::iterator ii,iin ;
   
   for(ii=particleVec.begin();ii!=particleVec.end();) {
+    // iin = ii ;
+    // iin++ ;
     if(ii->pos.x < -1 || ii->pos.x > 1) { // Outside domain so remove
       particleVec.erase(ii) ;
     }
-    ii = iin ;
+    else {
+      ii++;
+    }
+    // ii = iin ;
   }
 }
 
