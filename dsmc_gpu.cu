@@ -131,7 +131,7 @@ void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
 // discarded as they cannot be indexed.  Since this can happen only at the
 // x=-1 or x=1 boundaries, we only need to check the x coordinate
 void removeOutsideParticles(vector<particle> &particleVec) {
-  vector<particle>::iterator ii,iin ;
+  vector<particle>::iterator ii ;
   
   for(ii=particleVec.begin();ii!=particleVec.end();) {
     // iin = ii ;
@@ -151,7 +151,7 @@ void removeOutsideParticles(vector<particle> &particleVec) {
 // this can be computed directly from the coordinates
 void indexParticles(vector<particle> &particleVec, int ni, int nj, int nk) {
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  vector<particle>::iterator ii,iin ;
+  vector<particle>::iterator ii ;
   
   for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     // For a Cartesian grid, the mapping from cell to particle is trivial
