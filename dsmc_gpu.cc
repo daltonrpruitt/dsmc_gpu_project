@@ -8,6 +8,13 @@
 #include "vect3d.h"
 #include "structs_gpu.h"
 
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/random.h>
+
+#include <curand.h>
+#include <curand_kernel.h>
+
 
 // Physical constant describing atom collision size
 const float sigmak = 1e-28 ; // collision cross section
@@ -21,6 +28,8 @@ float plate_dy = 0.25 ;
 float plate_dz = .5 ;
 
 using namespace std ;
+using thrust::host_vector;
+using thrust::device_vector;
 
 
 
@@ -404,6 +413,17 @@ int main(int ac, char *av[]) {
 
   // re-sample 4 times during simulation
   const int sample_reset = ntimesteps/4 ;
+
+  // curandGenerator_t generator;
+  // curandStatus_t curandStatus = curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MTGP32); // Marsenne
+  device_vector<curandStatePhilox4_32_10_t> rand4State = 
+    device_vector<curandStatePhilox4_32_10_t>(ni*nj*nk*mppc);
+  device_vector<curandState> randState_5 = 
+    device_vector<curandState>(ni*nj*nk*mppc);
+  device_vector<curandState> rand1State_6 = 
+    device_vector<curandState>(ni*nj*nk*mppc);
+  
+
 
   // Begin simulation.  Initialize collision data
   initializeCollision(collisionData,vtemp) ;
