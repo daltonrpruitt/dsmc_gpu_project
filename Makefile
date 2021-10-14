@@ -13,6 +13,7 @@ load = source $$MODULESHOME/init/bash; module load cuda/11.0.3; module load gcc/
 
 all: $(main)
 
+$(main): $(main).cu $(gpu_includes)
 	$(load) $(CXX) $(CUDAFLAGS) $(CUDADEBUGFLAGS) $(include_flags) -o bin/$@ $(CPPFLAGS) $(CPPDEBUGFLAGS) $^
  
 
