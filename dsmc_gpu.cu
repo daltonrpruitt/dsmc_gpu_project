@@ -553,6 +553,7 @@ int main(int ac, char *av[]) {
     if((n&0xf) == 0) {
       cout << n << ' ' << particleVec.size() << endl ;
     }
+    particles = particleVec;
   }
 
   // Write out final particle data
