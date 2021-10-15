@@ -15,6 +15,7 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
+#define DEBUG
 
 // Physical constant describing atom collision size
 const float sigmak = 1e-28 ; // collision cross section
@@ -509,6 +510,9 @@ int main(int ac, char *av[]) {
   initializeCollision(collisionData,vtemp) ;
 
   bool pass = true;
+#ifdef DEBUG
+  particles.print_size();
+#endif
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
     // Add particles at inflow boundaries
@@ -521,6 +525,12 @@ int main(int ac, char *av[]) {
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu failed", pass);
     if(!pass) return -1;
     particleVec = particles.device_vector_to_stl_vector();
+#ifdef DEBUG
+    for(int i=0; i<32; ++i ) {
+      printf("%d:%1.5f | ", i*4, particleVec[i*4].pos.x);
+      if(i*4 % (ni-4) == 0 && i) printf("\n");
+    }
+#endif
     // Move particles
     moveParticlesWithBCs(particleVec,deltaT) ;
     // Remove any particles that are now outside of boundaries
