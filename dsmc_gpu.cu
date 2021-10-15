@@ -33,6 +33,15 @@ using thrust::device_vector;
 using thrust::raw_pointer_cast;
 
 
+void cudaErrChk(cudaError_t status, const string &msg, bool &pass)
+{
+  if (status != cudaSuccess)
+  {
+    printf("Error with %s! : ", msg.c_str());
+    printf("%s\n", cudaGetErrorString(status));
+    pass = false;
+  }
+}
 
 // Driver for the random number function
 inline double ranf() {
@@ -95,6 +104,55 @@ void init_rands(long input_seed, curandStatePhilox4_32_10_t *rand4,
   curand_init (seed+1, 0, 0, &rand5[idx]);
   curand_init (seed+2, 0, 0, &rand6[idx]);
 } 
+
+__global__
+void initializeBoundaries_gpu(
+  particle_gpu_raw particles,
+  int ni, int nj, int nk, 
+  float vmean, float vtemp, int mppc, 
+  curandStatePhilox4_32_10_t *rand4, 
+  curandState *rand_5,
+  curandState *rand_6) 
+{
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  if(idx + mppc - 1 >= ni * nj * nk) return;
+
+  double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
+  int j = idx / nj;
+  int k = idx * nk;
+  double cx = -1-dx ;
+  double cy = -1+float(j)*dy ;
+  double cz = -1+float(k)*dz ;
+
+  curandStatePhilox4_32_10_t local_rand4 = rand4[idx];
+  curandState local_rand_5 = rand_5[idx];
+  curandState local_rand_6 = rand_6[idx];
+
+  for(int m=0;m<mppc;++m) { // Compute mcp particles
+    float4 rand_results4 = curand_uniform4(&local_rand4);
+    float rand_result_5 = curand_uniform(&local_rand_5);
+    float rand_result_6 = curand_uniform(&local_rand_6);
+    particles.px[idx*mppc + m] = cx + rand_results4.x*dx;
+    particles.py[idx*mppc + m] = cy + rand_results4.y*dy;
+    particles.pz[idx*mppc + m] = cx + rand_results4.x*dx;
+
+    double t = max(rand_results4.w, 1e-200);
+    double speed = vtemp * sqrt(-log(t));
+
+    double B = 2. * rand_result_5-1;
+    double A = sqrt(1.-B*B);
+    double theta = rand_result_6*2*M_PI;
+    particles.vx[idx*mppc + m] = B;
+    particles.vy[idx*mppc + m] = A * cos(theta);
+    particles.vz[idx*mppc + m] = A * sin(theta);
+    particles.type[idx*mppc + m] = 0;
+    particles.index[idx*mppc + m] = 0;
+  }
+  // write local state back to global
+  rand4[idx] = local_rand4;
+  rand_5[idx] = local_rand_5;
+  rand_6[idx] = local_rand_6;
+}
 
 // Move particle for the timestep.  Also handle side periodic boundary
 // conditions and specular reflections off of a plate 
@@ -407,6 +465,7 @@ int main(int ac, char *av[]) {
 
   // Create simulation data structures 
   vector<particle> particleVec ;
+  particle_gpu_h_d particles(ni*nj*nk*mppc);
   vector<cellSample> cellData(ni*nj*nk) ;
   vector<collisionInfo> collisionData(ni*nj*nk) ;
 
@@ -449,10 +508,19 @@ int main(int ac, char *av[]) {
   // Begin simulation.  Initialize collision data
   initializeCollision(collisionData,vtemp) ;
 
+  bool pass = true;
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
     // Add particles at inflow boundaries
-    initializeBoundaries(particleVec,ni,nj,nk,vmean,vtemp,mppc) ;
+    // initializeBoundaries(particleVec,ni,nj,nk,vmean,vtemp,mppc) ;
+
+    initializeBoundaries_gpu<<<num_cells/thrds_per_block, thrds_per_block>>>(
+                            particles.raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
+                            rand4State_ptr, randState_5_ptr, rand4State_6_ptr) ;
+    cudaDeviceSynchronize();
+    cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu failed", pass);
+    if(!pass) return -1;
+    particleVec = particles.device_vector_to_stl_vector();
     // Move particles
     moveParticlesWithBCs(particleVec,deltaT) ;
     // Remove any particles that are now outside of boundaries
