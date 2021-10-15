@@ -30,6 +30,7 @@ float plate_dz = .5 ;
 using namespace std ;
 using thrust::host_vector;
 using thrust::device_vector;
+using thrust::raw_pointer_cast;
 
 
 
@@ -80,6 +81,20 @@ void initializeBoundaries(vector<particle> &particleVec,
     }
 }
 
+// Based on https://docs.nvidia.com/cuda/curand/device-api-overview.html#device-api-example
+__global__ 
+void init_rands(long input_seed, curandStatePhilox4_32_10_t *rand4, 
+  curandState *rand5, curandState *rand6) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  unsigned long long seed = input_seed + idx;
+  // __device__ void
+  //    curand_init (
+  //      unsigned long long seed, unsigned long long subsequence,
+  //      unsigned long long offset, curandState_t *state)
+  curand_init (seed,   0, 0, &rand4[idx]);
+  curand_init (seed+1, 0, 0, &rand5[idx]);
+  curand_init (seed+2, 0, 0, &rand6[idx]);
+} 
 
 // Move particle for the timestep.  Also handle side periodic boundary
 // conditions and specular reflections off of a plate 
@@ -413,18 +428,24 @@ int main(int ac, char *av[]) {
 
   // re-sample 4 times during simulation
   const int sample_reset = ntimesteps/4 ;
+  int thrds_per_block = 256;
 
   // curandGenerator_t generator;
   // curandStatus_t curandStatus = curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MTGP32); // Marsenne
+  int num_cells = ni*nj*nk;
   device_vector<curandStatePhilox4_32_10_t> rand4State = 
-    device_vector<curandStatePhilox4_32_10_t>(ni*nj*nk*mppc);
+    device_vector<curandStatePhilox4_32_10_t>(num_cells);
   device_vector<curandState> randState_5 = 
-    device_vector<curandState>(ni*nj*nk*mppc);
-  device_vector<curandState> rand1State_6 = 
-    device_vector<curandState>(ni*nj*nk*mppc);
+    device_vector<curandState>(num_cells);
+  device_vector<curandState> randState_6 = 
+    device_vector<curandState>(num_cells);
   
-
-
+  curandStatePhilox4_32_10_t * rand4State_ptr = raw_pointer_cast(rand4State.data());
+  curandState * randState_5_ptr = raw_pointer_cast(randState_5.data());
+  curandState * rand4State_6_ptr = raw_pointer_cast(randState_6.data());
+  init_rands<<<thrds_per_block, num_cells/thrds_per_block>>> (
+    seed, rand4State_ptr, randState_5_ptr, rand4State_6_ptr);
+    
   // Begin simulation.  Initialize collision data
   initializeCollision(collisionData,vtemp) ;
 
