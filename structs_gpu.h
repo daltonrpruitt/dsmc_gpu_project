@@ -14,6 +14,7 @@ using thrust::device_vector;
 struct particle_gpu_raw {
   float *px, *py, *pz, *vx, *vy, *vz;
   int *type, *index;
+  long unsigned int size;
 };
 
 // Data structure for holding particle information
@@ -61,6 +62,7 @@ struct particle_gpu_h_d {
     raw_pointers.vz = thrust::raw_pointer_cast(d_vel_z.data());
     raw_pointers.type = thrust::raw_pointer_cast(d_type.data());
     raw_pointers.index = thrust::raw_pointer_cast(d_index.data());
+    raw_pointers.size = d_pos_x.size();
   }
 
   particle_gpu_h_d(long unsigned int size) {

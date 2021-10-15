@@ -116,7 +116,7 @@ void initializeBoundaries_gpu(
   curandState *rand_6) 
 {
   int idx = threadIdx.x + blockIdx.x*blockDim.x;
-  if(idx + mppc - 1 >= ni * nj * nk) return;
+  if(idx + mppc - 1 >= particles.size) return;
 
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
   int j = idx / nj;
