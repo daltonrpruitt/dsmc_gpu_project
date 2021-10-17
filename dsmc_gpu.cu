@@ -138,6 +138,7 @@ void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
 
   // Loop over particles
   for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
+    if (ii->type == -1) continue;
     // position before and after timestep
     vect3d pos = ii->pos ;
     vect3d npos = pos+ii->vel*deltaT ;
@@ -184,14 +185,13 @@ void removeOutsideParticles(vector<particle> &particleVec) {
   vector<particle>::iterator ii ;
   
   for(ii=particleVec.begin();ii!=particleVec.end();) {
+    if (ii->type == -1) continue;
     // iin = ii ;
     // iin++ ;
     if(ii->pos.x < -1 || ii->pos.x > 1) { // Outside domain so remove
-      particleVec.erase(ii) ;
+      ii->type= -1 ;
     }
-    else {
-      ii++;
-    }
+    ii++;
     // ii = iin ;
   }
 }
@@ -204,6 +204,7 @@ void indexParticles(vector<particle> &particleVec, int ni, int nj, int nk) {
   vector<particle>::iterator ii ;
   
   for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
+    if (ii->type == -1) continue;
     // For a Cartesian grid, the mapping from cell to particle is trivial
     int i = min(int(floor((ii->pos.x+1.0)/dx)),ni-1) ;
     int j = min(int(floor((ii->pos.y+1.0)/dy)),nj-1) ;
@@ -227,6 +228,7 @@ void sampleParticles(vector<cellSample> &cellData,
                      const vector<particle> &particleVec) {
   vector<particle>::const_iterator ii ;
   for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
+    if (ii->type == -1) continue;
     int i = ii->index ;
     cellData[i].nparticles++ ;
     cellData[i].vel += ii->vel ;
@@ -251,6 +253,7 @@ void collideParticles(vector<particle> &particleVec,
   }
   vector<particle>::iterator ii ;
   for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
+    if (ii->type == -1) continue;
     int i = ii->index ;
     np[i]++ ;
   }
@@ -265,6 +268,7 @@ void collideParticles(vector<particle> &particleVec,
   // be used to access particles from this data structure.
   vector<particle *> pmap(offsets[ncells]) ;
   for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
+    if (ii->type == -1) continue;
     int i = ii->index ;
     pmap[cnt[i]+offsets[i]] = &(*ii) ;
     cnt[i]++ ;
