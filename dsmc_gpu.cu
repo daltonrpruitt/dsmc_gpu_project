@@ -64,33 +64,6 @@ inline double randVel(double vmp) {
   return vmp*sqrt(-log(t)) ;
 }
 
-// Create particles at inflow boundary
-// This works by creating particles at a ghost cell just before the boundary
-// any particles that don't make it into the domain are discarded.
-void initializeBoundaries(vector<particle> &particleVec,
-                          int ni, int nj, int nk,
-                          float vmean, float vtemp,int mppc) {
-  double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  
-  for(int j=0;j<nj;++j) 
-    for(int k=0;k<nk;++k) {
-      double cx = -1-dx ;
-      double cy = -1+float(j)*dy ;
-      double cz = -1+float(k)*dz ;
-      for(int m=0;m<mppc;++m) { // Compute mcp particles
-        particle p ;
-        // random location within cell
-        p.pos = vect3d(cx+ranf()*dx,cy+ranf()*dy,cz+ranf()*dz) ;
-        // random velocity with given thermal velocity, vtemp
-        p.vel = randomDir()*randVel(vtemp) ;
-        p.vel.x += vmean ;
-        p.type = 0 ;
-        p.index = 0 ;
-        particleVec.push_back(p) ;
-      }
-    }
-}
-
 // Based on https://docs.nvidia.com/cuda/curand/device-api-overview.html#device-api-example
 __global__ 
 void init_rands(long input_seed, curandStatePhilox4_32_10_t *rand4, 
@@ -106,6 +79,9 @@ void init_rands(long input_seed, curandStatePhilox4_32_10_t *rand4,
   curand_init (seed+2, 0, 0, &rand6[idx]);
 } 
 
+// Create particles at inflow boundary
+// This works by creating particles at a ghost cell just before the boundary
+// any particles that don't make it into the domain are discarded.
 __global__
 void initializeBoundaries_gpu(
   particle_gpu_raw particles,
