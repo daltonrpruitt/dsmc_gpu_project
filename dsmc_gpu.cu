@@ -11,6 +11,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/random.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/tuple.h>
+#include <thrust/sort.h>
 
 #include <curand.h>
 #include <curand_kernel.h>
@@ -33,6 +36,12 @@ using thrust::host_vector;
 using thrust::device_vector;
 using thrust::raw_pointer_cast;
 
+typedef thrust::device_vector<float>::iterator FloatIter;
+typedef thrust::device_vector<int>::iterator   IntIter;
+typedef thrust::tuple<FloatIter, FloatIter, FloatIter, 
+                      FloatIter, FloatIter, FloatIter, 
+                      IntIter> 
+    particlesTuple;
 
 void cudaErrChk(cudaError_t status, const string &msg, bool &pass)
 {
@@ -446,9 +455,16 @@ int main(int ac, char *av[]) {
 
   // Create simulation data structures 
   vector<particle> particleVec ;
-  particle_gpu_h_d particles(ni*nj*nk*mppc);
+  particle_gpu_h_d particles(ni*nj*nk, nj*nk, mppc);
   vector<cellSample> cellData(ni*nj*nk) ;
   vector<collisionInfo> collisionData(ni*nj*nk) ;
+
+  thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
+    thrust::make_tuple(
+    particles.d_pos_x.begin(), particles.d_pos_y.begin(), particles.d_pos_z.begin(), 
+    particles.d_vel_x.begin(), particles.d_vel_y.begin(), particles.d_vel_z.begin(),
+    particles.d_index.begin()
+  ));
 
   // Compute reasonable timestep
   float deltax = 2./float(max(max(ni,nj),nk)) ;
@@ -498,12 +514,14 @@ int main(int ac, char *av[]) {
     // Add particles at inflow boundaries
     // initializeBoundaries(particleVec,ni,nj,nk,vmean,vtemp,mppc) ;
 
-    initializeBoundaries_gpu<<<num_cells/thrds_per_block, thrds_per_block>>>(
-                            particles.raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
+    initializeBoundaries_gpu<<<ni*nj/thrds_per_block, thrds_per_block>>>(
+                            particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
                             rand4State_ptr, randState_5_ptr, rand4State_6_ptr) ;
     cudaDeviceSynchronize();
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu failed", pass);
     if(!pass) return -1;
+
+    thrust::sort_by_key(particles.d_type.begin(), particles.d_type.end(), particles_iterator_tuple, thrust::greater<int>());
     particleVec = particles.device_vector_to_stl_vector();
 #ifdef DEBUG
     for(int i=0; i<1024; i+=128 ) {

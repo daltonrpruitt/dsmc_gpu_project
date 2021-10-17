@@ -38,6 +38,7 @@ struct particle_gpu_h_d {
   device_vector<int> d_index ; 
 
   particle_gpu_raw raw_pointers;
+  particle_gpu_raw empty_raw_pointers;
 
   void copy_host_to_device() {
     d_pos_x = h_pos_x;
@@ -53,7 +54,7 @@ struct particle_gpu_h_d {
 
   }
 
-  void set_raw_device_pointers() {
+  void set_raw_device_pointers(int inlet_cells, int mppc) {
     raw_pointers.px = thrust::raw_pointer_cast(d_pos_x.data());
     raw_pointers.py = thrust::raw_pointer_cast(d_pos_y.data());
     raw_pointers.pz = thrust::raw_pointer_cast(d_pos_z.data());
@@ -63,22 +64,34 @@ struct particle_gpu_h_d {
     raw_pointers.type = thrust::raw_pointer_cast(d_type.data());
     raw_pointers.index = thrust::raw_pointer_cast(d_index.data());
     raw_pointers.size = d_pos_x.size();
+
+    int offset_to_inlet_cells = raw_pointers.size - inlet_cells*mppc;
+
+    empty_raw_pointers.px = raw_pointers.px + offset_to_inlet_cells;
+    empty_raw_pointers.py = raw_pointers.py + offset_to_inlet_cells;
+    empty_raw_pointers.px = raw_pointers.pz + offset_to_inlet_cells;
+    empty_raw_pointers.vx = raw_pointers.vx + offset_to_inlet_cells;
+    empty_raw_pointers.vy = raw_pointers.vy + offset_to_inlet_cells;
+    empty_raw_pointers.vx = raw_pointers.vz + offset_to_inlet_cells;
+    empty_raw_pointers.type = raw_pointers.type + offset_to_inlet_cells;
+    empty_raw_pointers.index = raw_pointers.index+ offset_to_inlet_cells;
   }
 
-  particle_gpu_h_d(long unsigned int size) {
-    h_pos_x = host_vector<float>(size, 0);
-    h_pos_y = host_vector<float>(size, 0);
-    h_pos_z = host_vector<float>(size, 0);
+  particle_gpu_h_d(int total_cells, int inlet_cells, int mppc) {
+    int total_particles = (total_cells + inlet_cells)*mppc;
+    h_pos_x = host_vector<float>(total_particles, 0);
+    h_pos_y = host_vector<float>(total_particles, 0);
+    h_pos_z = host_vector<float>(total_particles, 0);
     
-    h_vel_x = host_vector<float>(size, 0);
-    h_vel_y = host_vector<float>(size, 0);
-    h_vel_z = host_vector<float>(size, 0);
+    h_vel_x = host_vector<float>(total_particles, 0);
+    h_vel_y = host_vector<float>(total_particles, 0);
+    h_vel_z = host_vector<float>(total_particles, 0);
    
-    h_type = host_vector<int>(size, -1);
-    h_index = host_vector<int>(size, 0);
+    h_type = host_vector<int>(total_particles, -1);
+    h_index = host_vector<int>(total_particles, 0);
     
     copy_host_to_device();
-    set_raw_device_pointers();
+    set_raw_device_pointers(inlet_cells, mppc);
   }
   particle_gpu_h_d(vector<particle> &in_particles) {
     unsigned long size = in_particles.size(); 
