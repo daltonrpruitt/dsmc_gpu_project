@@ -526,10 +526,14 @@ int main(int ac, char *av[]) {
     if(!pass) return -1;
     particleVec = particles.device_vector_to_stl_vector();
 #ifdef DEBUG
-    for(int i=0; i<32; ++i ) {
-      printf("%d:%1.5f | ", i*4, particleVec[i*4].pos.x);
-      if(i*4 % (ni-4) == 0 && i) printf("\n");
+    for(int i=0; i<1024; i+=128 ) {
+      for(int j=0; j<6; ++j) {
+        int idx = i + j;
+        printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particleVec[idx].pos.x, particleVec[idx].pos.y, particleVec[idx].pos.z);
+      }
+      printf("\n");
     }
+    printf("\n");
 #endif
     // Move particles
     moveParticlesWithBCs(particleVec,deltaT) ;
