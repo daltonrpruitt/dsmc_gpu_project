@@ -12,8 +12,9 @@ using thrust::host_vector;
 using thrust::device_vector;
 
 struct particle_gpu_raw {
-  float *px, *py, *pz, *vx, *vy, *vz;
-  int *type, *index;
+  float *px = nullptr, *py = nullptr, *pz = nullptr, 
+        *vx = nullptr, *vy = nullptr, *vz = nullptr;
+  int *type = nullptr, *index = nullptr;
   long unsigned int size;
 };
 
