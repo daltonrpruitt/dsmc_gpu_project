@@ -515,7 +515,7 @@ int main(int ac, char *av[]) {
     // Add particles at inflow boundaries
     // initializeBoundaries(particleVec,ni,nj,nk,vmean,vtemp,mppc) ;
 
-    initializeBoundaries_gpu<<<ni*nj/thrds_per_block, thrds_per_block>>>(
+    initializeBoundaries_gpu<<<nj*nk/thrds_per_block, thrds_per_block>>>(
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
                             rand4State_ptr, randState_5_ptr, rand4State_6_ptr) ;
     cudaDeviceSynchronize();
