@@ -519,7 +519,7 @@ int main(int ac, char *av[]) {
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
                             rand4State_ptr, randState_5_ptr, rand4State_6_ptr) ;
     cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu failed", pass);
+    cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
     if(!pass) return -1;
 
     thrust::sort_by_key(particles.d_type.begin(), particles.d_type.end(), particles_iterator_tuple, thrust::greater<int>());
