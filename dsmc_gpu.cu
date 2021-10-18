@@ -14,6 +14,7 @@
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
+#include <thrust/count.h>
 
 #include <curand.h>
 #include <curand_kernel.h>
@@ -522,9 +523,11 @@ int main(int ac, char *av[]) {
     if(!pass) return -1;
 
     thrust::sort_by_key(particles.d_type.begin(), particles.d_type.end(), particles_iterator_tuple, thrust::greater<int>());
+    int num_invalid_particles = thrust::count(particles.d_type.begin(),particles.d_type.end(), -1);
+    int num_valid_particles = particles.d_type.size() - num_invalid_particles;
     particleVec = particles.device_vector_to_stl_vector();
 #ifdef DEBUG
-    for(int i=0; i<1024; i+=128 ) {
+    for(int i=num_valid_particles - 12; i< num_valid_particles + 12; i+=6 ) {
       for(int j=0; j<6; ++j) {
         int idx = i + j;
         printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particleVec[idx].pos.x, particleVec[idx].pos.y, particleVec[idx].pos.z);
