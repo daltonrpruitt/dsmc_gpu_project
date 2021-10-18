@@ -69,10 +69,10 @@ struct particle_gpu_h_d {
 
     empty_raw_pointers.px = raw_pointers.px + offset_to_inlet_cells;
     empty_raw_pointers.py = raw_pointers.py + offset_to_inlet_cells;
-    empty_raw_pointers.px = raw_pointers.pz + offset_to_inlet_cells;
+    empty_raw_pointers.pz = raw_pointers.pz + offset_to_inlet_cells;
     empty_raw_pointers.vx = raw_pointers.vx + offset_to_inlet_cells;
     empty_raw_pointers.vy = raw_pointers.vy + offset_to_inlet_cells;
-    empty_raw_pointers.vx = raw_pointers.vz + offset_to_inlet_cells;
+    empty_raw_pointers.vz = raw_pointers.vz + offset_to_inlet_cells;
     empty_raw_pointers.type = raw_pointers.type + offset_to_inlet_cells;
     empty_raw_pointers.index = raw_pointers.index+ offset_to_inlet_cells;
   }
