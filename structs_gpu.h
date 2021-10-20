@@ -90,7 +90,7 @@ struct particle_gpu_h_d {
     empty_raw_pointers.vz = raw_pointers.vz + offset_to_inlet_cells;
     empty_raw_pointers.type = raw_pointers.type + offset_to_inlet_cells;
     empty_raw_pointers.index = raw_pointers.index+ offset_to_inlet_cells;
-    empty_raw_pointers.size = inlet_cells;
+    empty_raw_pointers.size = inlet_cells*mppc;
   }
 
   particle_gpu_h_d(int total_cells, int inlet_cells, int mppc) {
