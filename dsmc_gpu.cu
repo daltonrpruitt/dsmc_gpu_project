@@ -192,7 +192,7 @@ void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
 // Move particle for the timestep.  Also handle side periodic boundary
 // conditions and specular reflections off of a plate 
 __global__
-void moveParticlesWithBCs_gpu(  particle_gpu_raw particles, float deltaT, Plate plate) {
+void moveParticlesWithBCs_gpu(particle_gpu_raw particles, float deltaT, Plate plate) {
   int idx = threadIdx.x + blockIdx.x*blockDim.x;
   if(idx >= particles.num_valid_particles) return;
 
