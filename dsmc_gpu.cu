@@ -543,7 +543,11 @@ int main(int ac, char *av[]) {
 #endif
 
     // Remove any particles that are now outside of boundaries
-    removeOutsideParticles(particleVec) ;
+    removeOutsideParticles_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers) ;
+    cudaDeviceSynchronize();
+    cudaErrChk(cudaGetLastError(), "removeOutsideParticles_gpu", pass);
+    if(!pass) return -1;
+
 #ifdef DEBUG
     printf("After removeOutsideParticles...\n");
 #endif
