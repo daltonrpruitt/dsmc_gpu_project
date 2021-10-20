@@ -37,12 +37,6 @@ using thrust::host_vector;
 using thrust::device_vector;
 using thrust::raw_pointer_cast;
 
-typedef thrust::device_vector<float>::iterator FloatIter;
-typedef thrust::device_vector<int>::iterator   IntIter;
-typedef thrust::tuple<FloatIter, FloatIter, FloatIter, 
-                      FloatIter, FloatIter, FloatIter, 
-                      IntIter> 
-    particlesTuple;
 
 void cudaErrChk(cudaError_t status, const string &msg, bool &pass)
 {
@@ -460,13 +454,6 @@ int main(int ac, char *av[]) {
   vector<cellSample> cellData(ni*nj*nk) ;
   vector<collisionInfo> collisionData(ni*nj*nk) ;
 
-  thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
-    thrust::make_tuple(
-    particles.d_pos_x.begin(), particles.d_pos_y.begin(), particles.d_pos_z.begin(), 
-    particles.d_vel_x.begin(), particles.d_vel_y.begin(), particles.d_vel_z.begin(),
-    particles.d_index.begin()
-  ));
-
   // Compute reasonable timestep
   float deltax = 2./float(max(max(ni,nj),nk)) ;
   float deltaT = .1*deltax/(vmean+vtemp) ;
@@ -522,15 +509,12 @@ int main(int ac, char *av[]) {
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
     if(!pass) return -1;
 
-    thrust::sort_by_key(particles.d_type.begin(), particles.d_type.end(), particles_iterator_tuple, thrust::greater<int>());
-    int num_invalid_particles = thrust::count(particles.d_type.begin(),particles.d_type.end(), -1);
-    int num_valid_particles = particles.d_type.size() - num_invalid_particles;
-    particleVec = particles.device_vector_to_stl_vector();
+    particleVec = particles.valid_particles();
 #ifdef DEBUG
-    for(int i=num_valid_particles - 12; i< num_valid_particles + 12; i+=6 ) {
+    for(int i=particles.num_valid_particles - 12; i<particles.num_valid_particles + 12; i+=6 ) {
       for(int j=0; j<6; ++j) {
         int idx = i + j;
-        printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particleVec[idx].pos.x, particleVec[idx].pos.y, particleVec[idx].pos.z);
+        printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particles.h_pos_x[idx], particles.h_pos_y[idx], particles.h_pos_z[idx]);
       }
       printf("\n");
     }

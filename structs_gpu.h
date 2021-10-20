@@ -3,13 +3,24 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/random.h>
-
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/tuple.h>
+#include <thrust/sort.h>
+#include <thrust/count.h>
 #include "structs.h"
 #include "vect3d.h"
 
 using std::vector;
 using thrust::host_vector;
 using thrust::device_vector;
+
+typedef thrust::device_vector<float>::iterator FloatIter;
+typedef thrust::device_vector<int>::iterator   IntIter;
+typedef thrust::tuple<FloatIter, FloatIter, FloatIter, 
+                      FloatIter, FloatIter, FloatIter, 
+                      IntIter> 
+    particlesTuple;
+
 
 struct particle_gpu_raw {
   float *px = nullptr, *py = nullptr, *pz = nullptr, 
@@ -40,6 +51,8 @@ struct particle_gpu_h_d {
 
   particle_gpu_raw raw_pointers;
   particle_gpu_raw empty_raw_pointers;
+
+  int num_valid_particles = -1;
 
   void copy_host_to_device() {
     d_pos_x = h_pos_x;
@@ -130,17 +143,21 @@ struct particle_gpu_h_d {
     return *this;
   }
 
-  vector<particle> device_vector_to_stl_vector() {
+  void copy_device_vector_to_host() {
     thrust::copy(d_pos_x.begin(), d_pos_x.end(), h_pos_x.begin());
     thrust::copy(d_pos_y.begin(), d_pos_y.end(), h_pos_y.begin());
     thrust::copy(d_pos_z.begin(), d_pos_z.end(), h_pos_z.begin());
     thrust::copy(d_vel_x.begin(), d_vel_x.end(), h_vel_x.begin());
     thrust::copy(d_vel_y.begin(), d_vel_y.end(), h_vel_y.begin());
     thrust::copy(d_vel_z.begin(), d_vel_z.end(), h_vel_z.begin());
-    thrust::copy(d_type.begin(),  d_type.end(),  h_type.begin() );
+    thrust::copy(d_type.begin() , d_type.end() ,  h_type.begin());
     thrust::copy(d_index.begin(), d_index.end(), h_index.begin());
+  }
+
+  vector<particle> slice(int start, int size) {
+    copy_device_vector_to_host();
     vector<particle> particles;
-    for(long unsigned int i=0; i < h_pos_x.size(); ++i) {
+    for(int i=start; i < start + size; ++i) {
       particle p;
       p.pos = vect3d(h_pos_x[i],h_pos_y[i],h_pos_z[i]);
       p.vel = vect3d(h_vel_x[i],h_vel_y[i],h_vel_z[i]);
@@ -150,6 +167,24 @@ struct particle_gpu_h_d {
       particles.push_back(p);
     }
     return particles;
+  }
+
+  vector<particle> slice(int size) {
+    return slice(0, size);
+  }
+
+  vector<particle> valid_particles() {
+    thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
+      thrust::make_tuple(
+        d_pos_x.begin(), d_pos_y.begin(), d_pos_z.begin(), 
+        d_vel_x.begin(), d_vel_y.begin(), d_vel_z.begin(),
+        d_index.begin()
+    ));
+    thrust::sort_by_key(d_type.begin(), d_type.end(), particles_iterator_tuple, thrust::greater<int>());
+    int num_invalid_particles_ = thrust::count(d_type.begin(),d_type.end(), -1);
+    int num_valid_particles_ = d_type.size() - num_invalid_particles_;
+    num_valid_particles = num_valid_particles_;
+    return slice(num_valid_particles);
   }
 
   void print_size() {
