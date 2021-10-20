@@ -128,9 +128,11 @@ void initializeBoundaries_gpu(
     double B = 2. * rand_result_5-1;
     double A = sqrt(1.-B*B);
     double theta = rand_result_6*2*M_PI;
-    particles.vx[idx*mppc + m] = B;
-    particles.vy[idx*mppc + m] = A * cos(theta);
-    particles.vz[idx*mppc + m] = A * sin(theta);
+
+    particles.vx[idx*mppc + m] = B * speed + vmean;
+    particles.vy[idx*mppc + m] = A * cos(theta) * speed;
+    particles.vz[idx*mppc + m] = A * sin(theta) * speed;
+
     particles.type[idx*mppc + m] = 0;
     particles.index[idx*mppc + m] = 0;
   }
