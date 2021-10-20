@@ -187,6 +187,52 @@ void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
   }
 }
 
+// Move particle for the timestep.  Also handle side periodic boundary
+// conditions and specular reflections off of a plate 
+__global__
+void moveParticlesWithBCs_gpu(  particle_gpu_raw particles, float deltaT, Plate plate) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  if(idx >= particles.num_valid_particles) return;
+
+  vect3d pos = vect3d(particles.px[idx], particles.py[idx], particles.pz[idx]);
+  vect3d vel = vect3d(particles.vy[idx], particles.vy[idx], particles.vz[idx]);
+  vect3d npos = pos + vel*deltaT;
+  // Check if particle hits the plate
+  if((pos.x < plate.x && npos.x > plate.x) ||
+      (pos.x > plate.x && npos.x < plate.x)) {
+    // It passes through the plane of the plate, now
+    // check if it actually hits the plate
+    double t = (pos.x-plate.x)/(pos.x-npos.x) ; // fraction of timestep to hit plate
+    vect3d pt = pos*(1.-t)+npos*t ; // interpolated position at time t
+    if((pt.y < plate.dy && pt.y > -plate.dy) &&
+        (pt.z < plate.dz && pt.z > -plate.dz)) {
+          // collides with plate
+          // adjust position and velocity (specular reflection)
+          npos.x = npos.x - 2*(npos.x-plate.x) ; 
+          // why 2 and not some function of t? b/c is calculating new npos, not pos,
+          //   so has to get back to plate, then keeps moving the same amount in new new direction
+          vel.x = -vel.x ; // Velocity just reflects along x direction
+          particles.type[idx] = 2 ;
+    }
+  }
+  // Apply periodic bcs, here we just relocate particle to other side of
+  // the domain when it crosses a periodic boundary
+  // Note, assuming domain is a unit square
+  if(npos.y>1)
+    npos.y -= 2.0 ;
+  if(npos.y<-1)
+    npos.y += 2.0 ;
+  if(npos.z>1)
+    npos.z -= 2.0 ;
+  if(npos.z<-1)
+    npos.z += 2.0 ;
+
+  // Update particle positions
+  particles.px[idx] = npos.x;
+  particles.py[idx] = npos.y;
+  particles.pz[idx] = npos.z;
+}
+
 // After moving particles, any particles outside of the cells need to be
 // discarded as they cannot be indexed.  Since this can happen only at the
 // x=-1 or x=1 boundaries, we only need to check the x coordinate
@@ -525,8 +571,26 @@ int main(int ac, char *av[]) {
     }
     printf("\n");
 #endif
+
+    int blocks = particles.num_valid_particles / thrds_per_block + 1;
     // Move particles
-    moveParticlesWithBCs(particleVec,deltaT) ;
+    moveParticlesWithBCs_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers,deltaT,plate) ;
+    cudaDeviceSynchronize();
+    cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
+    if(!pass) return -1;
+
+#ifdef DEBUG
+    particleVec = particles.get_valid_particles();
+    for(int i=0; i<1000; i+=200 ) {
+      for(int j=0; j<6; ++j) {
+        int idx = i + j;
+        printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particles.h_pos_x[idx], particles.h_pos_y[idx], particles.h_pos_z[idx]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+#endif
+
     // Remove any particles that are now outside of boundaries
     removeOutsideParticles(particleVec) ;
     // Compute cell index for particles based on their current
