@@ -120,7 +120,7 @@ void initializeBoundaries_gpu(
     float rand_result_6 = curand_uniform(&local_rand_6);
     particles.px[idx*mppc + m] = cx + rand_results4.x*dx;
     particles.py[idx*mppc + m] = cy + rand_results4.y*dy;
-    particles.pz[idx*mppc + m] = cx + rand_results4.x*dx;
+    particles.pz[idx*mppc + m] = cx + rand_results4.z*dx;
 
     double t = max(rand_results4.w, 1e-200);
     double speed = vtemp * sqrt(-log(t));
