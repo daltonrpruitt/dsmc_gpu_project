@@ -238,19 +238,13 @@ void moveParticlesWithBCs_gpu(particle_gpu_raw particles, float deltaT, Plate pl
 // After moving particles, any particles outside of the cells need to be
 // discarded as they cannot be indexed.  Since this can happen only at the
 // x=-1 or x=1 boundaries, we only need to check the x coordinate
-void removeOutsideParticles(vector<particle> &particleVec) {
-  vector<particle>::iterator ii ;
-  
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    if (ii->type == -1) continue;
-    // iin = ii ;
-    // iin++ ;
-    if(ii->pos.x < -1 || ii->pos.x > 1) { // Outside domain so remove
-      ii->type= -1 ;
+__global__
+void removeOutsideParticles_gpu(particle_gpu_raw particles) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  if(idx >= particles.num_valid_particles) return;
+    if(particles.px[idx] < -1.0 || particles.px[idx] > 1.0) { // Outside domain so remove
+      particles.type[idx] = -1 ;
     }
-    ii++;
-    // ii = iin ;
-  }
 }
 
 
