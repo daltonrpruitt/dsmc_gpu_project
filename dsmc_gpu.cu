@@ -509,9 +509,9 @@ int main(int ac, char *av[]) {
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
     if(!pass) return -1;
 
-    particleVec = particles.valid_particles();
+    particleVec = particles.get_valid_particles();
 #ifdef DEBUG
-    for(int i=particles.num_valid_particles - 12; i<particles.num_valid_particles + 12; i+=6 ) {
+    for(int i=particles.num_valid_particles - 6; i<particles.num_valid_particles + 6; i+=6 ) {
       for(int j=0; j<6; ++j) {
         int idx = i + j;
         printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particles.h_pos_x[idx], particles.h_pos_y[idx], particles.h_pos_z[idx]);

@@ -26,7 +26,8 @@ struct particle_gpu_raw {
   float *px = nullptr, *py = nullptr, *pz = nullptr, 
         *vx = nullptr, *vy = nullptr, *vz = nullptr;
   int *type = nullptr, *index = nullptr;
-  long unsigned int size;
+  long unsigned int size = 0;
+  long unsigned int num_valid_particles = 0;
 };
 
 // Data structure for holding particle information
@@ -173,7 +174,7 @@ struct particle_gpu_h_d {
     return slice(0, size);
   }
 
-  vector<particle> valid_particles() {
+  vector<particle> get_valid_particles() {
     thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
       thrust::make_tuple(
         d_pos_x.begin(), d_pos_y.begin(), d_pos_z.begin(), 
@@ -184,6 +185,7 @@ struct particle_gpu_h_d {
     int num_invalid_particles_ = thrust::count(d_type.begin(),d_type.end(), -1);
     int num_valid_particles_ = d_type.size() - num_invalid_particles_;
     num_valid_particles = num_valid_particles_;
+    raw_pointers.num_valid_particles = num_valid_particles;
     return slice(num_valid_particles);
   }
 
