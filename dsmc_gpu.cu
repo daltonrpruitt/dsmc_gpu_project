@@ -142,52 +142,6 @@ void initializeBoundaries_gpu(
   rand_6[idx] = local_rand_6;
 }
 
-// Move particle for the timestep.  Also handle side periodic boundary
-// conditions and specular reflections off of a plate 
-void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
-  vector<particle>::iterator ii ;
-
-  // Loop over particles
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    if (ii->type == -1) continue;
-    // position before and after timestep
-    vect3d pos = ii->pos ;
-    vect3d npos = pos+ii->vel*deltaT ;
-
-    // Check if particle hits the plate
-    if((pos.x < plate_x && npos.x > plate_x) ||
-       (pos.x > plate_x && npos.x < plate_x)) {
-      // It passes through the plane of the plate, now
-      // check if it actually hits the plate
-      double t = (pos.x-plate_x)/(pos.x-npos.x) ; // fraction of timestep to hit plate
-      vect3d pt = pos*(1.-t)+npos*t ; // interpolated position at time t
-      if((pt.y < plate_dy && pt.y > -plate_dy) &&
-         (pt.z < plate_dz && pt.z > -plate_dz)) {
-           // collides with plate
-           // adjust position and velocity (specular reflection)
-           npos.x = npos.x - 2*(npos.x-plate_x) ; 
-           // why 2 and not some function of t? b/c is calculating new npos, not pos,
-           //   so has to get back to plate, then keeps moving the same amount in new new direction
-           ii->vel.x = -ii->vel.x ; // Velocity just reflects along x direction
-           ii->type = 2 ;
-      }
-    }
-    // Apply periodic bcs, here we just relocate particle to other side of
-    // the domain when it crosses a periodic boundary
-    // Note, assuming domain is a unit square
-    if(npos.y>1)
-      npos.y -= 2.0 ;
-    if(npos.y<-1)
-      npos.y += 2.0 ;
-    if(npos.z>1)
-      npos.z -= 2.0 ;
-    if(npos.z<-1)
-      npos.z += 2.0 ;
-
-    // Update particle positions
-    ii->pos = npos ;
-  }
-}
 
 // Move particle for the timestep.  Also handle side periodic boundary
 // conditions and specular reflections off of a plate 
