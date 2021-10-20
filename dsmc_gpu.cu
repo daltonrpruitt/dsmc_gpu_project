@@ -527,7 +527,7 @@ int main(int ac, char *av[]) {
     // Move particles
     moveParticlesWithBCs_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers,deltaT,plate) ;
     cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
+    cudaErrChk(cudaGetLastError(), "moveParticlesWithBCs_gpu", pass);
     if(!pass) return -1;
 
 #ifdef DEBUG
