@@ -559,6 +559,9 @@ int main(int ac, char *av[]) {
     cudaDeviceSynchronize();
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
     if(!pass) return -1;
+#ifdef DEBUG
+    printf("After initializeBoundaries_gpu...\n");
+#endif
 
     particleVec = particles.get_valid_particles();
 #ifdef DEBUG
@@ -593,20 +596,38 @@ int main(int ac, char *av[]) {
 
     // Remove any particles that are now outside of boundaries
     removeOutsideParticles(particleVec) ;
+#ifdef DEBUG
+    printf("After removeOutsideParticles...\n");
+#endif
     // Compute cell index for particles based on their current
     // locations
     indexParticles(particleVec,ni,nj,nk) ;
+#ifdef DEBUG
+    printf("After indexParticles...\n");
+#endif
+
     // If time to reset cell samples, reinitialize data
     if(n%sample_reset == 0 ) {
       initializeSample(cellData) ;
+#ifdef DEBUG
+      printf("After initializeSample...\n");
+#endif
       nsample = 0 ;
     }
     // Sample particle information to cells
     nsample++ ;
     sampleParticles(cellData,particleVec) ;
+#ifdef DEBUG
+      printf("After sampleParticles...\n");
+#endif
+
     // Compute particle collisions
     collideParticles(particleVec,collisionData,cellData,nsample,
                      cellvol,deltaT) ;
+#ifdef DEBUG
+      printf("After collideParticles...\n");
+#endif
+
     // print out progress
     if((n&0xf) == 0) {
       cout << n << ' ' << particleVec.size() << endl ;
