@@ -197,7 +197,7 @@ void moveParticlesWithBCs_gpu(particle_gpu_raw particles, float deltaT, Plate pl
   if(idx >= particles.num_valid_particles) return;
 
   vect3d pos = vect3d(particles.px[idx], particles.py[idx], particles.pz[idx]);
-  vect3d vel = vect3d(particles.vy[idx], particles.vy[idx], particles.vz[idx]);
+  vect3d vel = vect3d(particles.vx[idx], particles.vy[idx], particles.vz[idx]);
   vect3d npos = pos + vel*deltaT;
   // Check if particle hits the plate
   if((pos.x < plate.x && npos.x > plate.x) ||
