@@ -509,10 +509,7 @@ int main(int ac, char *av[]) {
     if(!pass) return -1;
 #ifdef DEBUG
     printf("After initializeBoundaries_gpu...\n");
-#endif
-
-    particleVec = particles.get_valid_particles();
-#ifdef DEBUG
+    particles.print_small_sample(1);    
     for(int i=particles.num_valid_particles - 6; i<particles.num_valid_particles + 6; i+=6 ) {
       for(int j=0; j<6; ++j) {
         int idx = i + j;
@@ -531,17 +528,11 @@ int main(int ac, char *av[]) {
     if(!pass) return -1;
 
 #ifdef DEBUG
-    particleVec = particles.get_valid_particles();
-    for(int i=0; i<1000; i+=200 ) {
-      for(int j=0; j<6; ++j) {
-        int idx = i + j;
-        printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particles.h_pos_x[idx], particles.h_pos_y[idx], particles.h_pos_z[idx]);
-      }
-      printf("\n");
-    }
-    printf("\n");
+    printf("After moveParticlesWithBCs...\n");
+    particles.print_small_sample();
 #endif
 
+    particleVec = particles.get_valid_particles();
     // Remove any particles that are now outside of boundaries
     removeOutsideParticles_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers) ;
     cudaDeviceSynchronize();
@@ -550,6 +541,8 @@ int main(int ac, char *av[]) {
 
 #ifdef DEBUG
     printf("After removeOutsideParticles...\n");
+    particles.print_size();
+    particles.print_small_sample();
 #endif
     // Compute cell index for particles based on their current
     // locations

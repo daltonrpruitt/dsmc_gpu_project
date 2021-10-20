@@ -174,7 +174,7 @@ struct particle_gpu_h_d {
     return slice(0, size);
   }
 
-  vector<particle> get_valid_particles() {
+  void sort_particles_by_validity(){
     thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
       thrust::make_tuple(
         d_pos_x.begin(), d_pos_y.begin(), d_pos_z.begin(), 
@@ -183,16 +183,49 @@ struct particle_gpu_h_d {
     ));
     thrust::sort_by_key(d_type.begin(), d_type.end(), particles_iterator_tuple, thrust::greater<int>());
     int num_invalid_particles_ = thrust::count(d_type.begin(),d_type.end(), -1);
-    int num_valid_particles_ = d_type.size() - num_invalid_particles_;
-    num_valid_particles = num_valid_particles_;
+    num_valid_particles = d_type.size() - num_invalid_particles_;
     raw_pointers.num_valid_particles = num_valid_particles;
+  }
+
+  vector<particle> get_valid_particles() {
+    sort_particles_by_validity();
     return slice(num_valid_particles);
   }
 
   void print_size() {
-    printf("Size of particles at %p :\n", (void *)this);
-    printf(" particles=%zu ; bytes total=%zu \n", h_pos_x.size(), 
-      h_pos_x.size()*sizeof(float)*6 + h_type.size()*sizeof(int)*2 );
+    sort_particles_by_validity();
+    printf("Size of particles: ");
+    printf(" particles=%d ; spots total=%zu \n", num_valid_particles, h_type.size());
+  }
+
+  void print_small_sample(int version=0) {
+    sort_particles_by_validity();
+    copy_device_vector_to_host();
+    for(int i=0; i<1000; i+=200 ) {
+      for(int j=0; j<6; ++j) {
+        int idx = i + j;
+        printf("%4d:", idx);
+        if(h_type[idx] != -1)
+          printf("(%1.5f,%1.5f,%1.5f)", h_pos_x[idx], h_pos_y[idx], h_pos_z[idx]);
+        else
+          printf("     Invalid Particle     ");
+        printf(" |");
+      }
+      if(version > 0){ 
+        printf("\n  Vel:");
+        for(int j=0; j<6; ++j) {
+          int idx = i + j;
+          printf("   ");
+          if(h_type[idx] != -1)
+            printf("(%1.5f,%1.5f,%1.5f)", h_vel_x[idx], h_vel_y[idx], h_vel_z[idx]);
+          else
+            printf("    Invalid Particle    ");
+          printf("    ");
+        }
+      }
+      printf("\n");
+    }
+    printf("\n");
   }
 } ;
 
