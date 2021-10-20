@@ -31,6 +31,11 @@ float pnum = 1e27 ; // number of particles per simulated particle
 float plate_x = -0.25 ;
 float plate_dy = 0.25 ;
 float plate_dz = .5 ;
+struct Plate {
+  float x=plate_x, dy=plate_dy, dz=plate_dz;
+
+};
+Plate plate;
 
 using namespace std ;
 using thrust::host_vector;
@@ -416,7 +421,7 @@ int main(int ac, char *av[]) {
     string opt = string(av[i]) ;
     if(opt == "-2d") {
       nk = 1 ;
-      plate_dz = 1 ;
+      plate.dz = 1 ;
     }
     if(opt == "-ni") 
       ni = atoi(av[++i]) ;
@@ -431,11 +436,11 @@ int main(int ac, char *av[]) {
     if(opt == "-density")
       density = atof(av[++i]) ;
     if(opt == "-platex")
-      plate_x = atof(av[++i]) ;
+      plate.x = atof(av[++i]) ;
     if(opt == "-platedy")
-      plate_dy = atof(av[++i]) ;
+      plate.dy = atof(av[++i]) ;
     if(opt == "-platedz")
-      plate_dz = atof(av[++i]) ;
+      plate.dz = atof(av[++i]) ;
     if(opt == "-time") 
       time = atof(av[++i]) ;
     ++i ;
