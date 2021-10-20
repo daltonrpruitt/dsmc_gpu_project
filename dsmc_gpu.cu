@@ -5,7 +5,7 @@
 #include <vector>
 #include <stdlib.h>
 
-#include "vect3d.h"
+#include "vect3d_gpu.h"
 #include "structs_gpu.h"
 
 #include <thrust/host_vector.h>
