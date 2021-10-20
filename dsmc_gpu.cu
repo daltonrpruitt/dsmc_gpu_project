@@ -194,7 +194,7 @@ void moveParticlesWithBCs(vector<particle> &particleVec, float deltaT) {
 void removeOutsideParticles(vector<particle> &particleVec) {
   vector<particle>::iterator ii ;
   
-  for(ii=particleVec.begin();ii!=particleVec.end();) {
+  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
     if (ii->type == -1) continue;
     // iin = ii ;
     // iin++ ;
