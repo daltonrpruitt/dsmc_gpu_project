@@ -249,19 +249,113 @@ struct particle_gpu_h_d {
   }
 } ;
 
+
+struct cellSample_gpu_raw {
+  int *nparticles = nullptr;
+  float *vx = nullptr, *vy = nullptr, *vz = nullptr,
+        *energy = nullptr;
+};
+
 // Information that is sampled from the particles to the cells over
 // several timesteps
 struct cellSample_gpu {
-  device_vector<int> nparticles ;            // total number of particles sampled
-  device_vector<float> vel_x, vel_y, vel_z;  // total velocity vector
-  device_vector<int> energy ;                // total kinetic energy of particles
+  host_vector<int> h_nparticles ;            // total number of particles sampled
+  host_vector<float> h_vel_x, h_vel_y, h_vel_z;  // total velocity vector
+  host_vector<float> h_energy ;                // total kinetic energy of particles
+
+  device_vector<int> d_nparticles ;            // total number of particles sampled
+  device_vector<float> d_vel_x, d_vel_y, d_vel_z;  // total velocity vector
+  device_vector<float> d_energy ;                // total kinetic energy of particles
+
+  cellSample_gpu_raw raw_pointers; 
+  
+  void copy_host_to_device() {
+    d_nparticles = h_nparticles;
+
+    d_vel_x = h_vel_x;
+    d_vel_y = h_vel_y;
+    d_vel_z = h_vel_z;
+
+    d_energy = h_energy;
+  }
+
+  void set_raw_device_pointers() {
+    raw_pointers.nparticles = thrust::raw_pointer_cast(d_nparticles.data());
+    raw_pointers.vx = thrust::raw_pointer_cast(d_vel_x.data());
+    raw_pointers.vy = thrust::raw_pointer_cast(d_vel_y.data());
+    raw_pointers.vz = thrust::raw_pointer_cast(d_vel_z.data());
+    raw_pointers.energy = thrust::raw_pointer_cast(d_energy.data());
+  }
+
+  cellSample_gpu(int total_cells) {
+    h_nparticles = host_vector<int>(total_cells, 0);
+    h_vel_x = host_vector<float>(total_cells, 0);
+    h_vel_y = host_vector<float>(total_cells, 0);
+    h_vel_z = host_vector<float>(total_cells, 0);
+    h_energy = host_vector<float>(total_cells, 0);
+    copy_host_to_device();
+    set_raw_device_pointers();
+
+  }
+
+  cellSample_gpu operator= (vector<cellSample> &in_samples) {
+    unsigned long size = in_samples.size(); 
+    for(long unsigned int i=0; i<size; ++i) {
+      h_nparticles[i] = in_samples[i].nparticles;
+      h_vel_x[i] = in_samples[i].vel.x;
+      h_vel_y[i] = in_samples[i].vel.y;
+      h_vel_z[i] = in_samples[i].vel.z;
+      h_energy[i] = in_samples[i].energy;
+    }
+    copy_host_to_device();
+    return *this;
+  }
+
+
 } ;
+
+struct collisionInfo_gpu_raw {
+  float *maxCollisionRate = nullptr, *collisionRemainder = nullptr;
+};
 
 // Information that is used to control the collision probability code
 struct collisionInfo_gpu {
   // Maximum collision rate seen for this cell so far in the simulation
-  device_vector<float> maxCollisionRate ;
+  host_vector<float> h_maxCollisionRate ;
   // Non-integral fraction of collisions that remain to be performed
   // and are carried over into the next timestep
-  device_vector<float> collisionRemainder ;
+  host_vector<float> h_collisionRemainder ;
+
+  device_vector<float> d_maxCollisionRate ;
+  device_vector<float> d_collisionRemainder ;
+
+  collisionInfo_gpu_raw raw_pointers;
+
+  void copy_host_to_device() {
+    d_maxCollisionRate = h_maxCollisionRate;
+    d_collisionRemainder = h_maxCollisionRate;
+  }
+
+  void set_raw_device_pointers() {
+    raw_pointers.maxCollisionRate = thrust::raw_pointer_cast(d_maxCollisionRate.data());
+    raw_pointers.collisionRemainder = thrust::raw_pointer_cast(d_collisionRemainder.data());
+  }
+
+  collisionInfo_gpu(int total_cells) {
+    h_maxCollisionRate = host_vector<float>(total_cells, 0);
+    h_collisionRemainder = host_vector<float>(total_cells, 0);
+    copy_host_to_device();
+    set_raw_device_pointers();
+  }
+
+  collisionInfo_gpu operator= (vector<collisionInfo> &in_info) {
+    unsigned long size = in_info.size(); 
+    for(long unsigned int i=0; i<size; ++i) {
+      h_maxCollisionRate[i] = in_info[i].maxCollisionRate;
+      h_collisionRemainder[i] = in_info[i].collisionRemainder;
+    }
+    copy_host_to_device();
+    return *this;
+  }
+
 } ;
