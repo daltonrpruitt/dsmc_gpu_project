@@ -204,18 +204,22 @@ void removeOutsideParticles_gpu(particle_gpu_raw particles) {
 
 // Compute the cell index of each particle, for a regular Cartesian grid
 // this can be computed directly from the coordinates
-void indexParticles(vector<particle> &particleVec, int ni, int nj, int nk) {
+// Precondition: The device vectors referenced by particles only contains 
+//            valid particles (type != -1); this is accomplished by sorting
+//            by type and setting the number of valid particles in the 
+//            num_valid_particles member of the particle_gpu_raw struct.
+__global__
+void indexParticles_gpu(particle_gpu_raw particles, int ni, int nj, int nk) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;  
+  if(idx >= particles.num_valid_particles) return;
+
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  vector<particle>::iterator ii ;
   
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    if (ii->type == -1) continue;
     // For a Cartesian grid, the mapping from cell to particle is trivial
-    int i = min(int(floor((ii->pos.x+1.0)/dx)),ni-1) ;
-    int j = min(int(floor((ii->pos.y+1.0)/dy)),nj-1) ;
-    int k = min(int(floor((ii->pos.z+1.0)/dz)),nk-1) ;
-    ii->index = i*nj*nk+j*nk+k ;
-  }  
+  int i = min(int(floor((particles.px[idx]+1.0)/dx)),ni-1) ;
+  int j = min(int(floor((particles.py[idx]+1.0)/dy)),nj-1) ;
+  int k = min(int(floor((particles.pz[idx]+1.0)/dz)),nk-1) ;
+  particles.index[idx] = i*nj*nk+j*nk+k ;
 }
 
 // Initialize the sampled cell variables to zero
@@ -544,9 +548,16 @@ int main(int ac, char *av[]) {
     particles.print_size();
     particles.print_small_sample();
 #endif
+
+    particles.sort_particles_by_validity();
+#ifdef DEBUG
+    printf("Num Blocks for indexParticles: %d",particles.num_valid_particles/ thrds_per_block+1);
+#endif
     // Compute cell index for particles based on their current
     // locations
-    indexParticles(particleVec,ni,nj,nk) ;
+    indexParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
+      particles.raw_pointers,ni,nj,nk) ;
+
 #ifdef DEBUG
     printf("After indexParticles...\n");
 #endif
