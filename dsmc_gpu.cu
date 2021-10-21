@@ -349,13 +349,18 @@ void collideParticles(vector<particle> &particleVec,
 
 
 // Initialize the collision data structures to modest initial values
-void initializeCollision(vector<collisionInfo> &collisionData,
-                         float vtemp) {
-  const int ncells = collisionData.size() ;
-  for(int i=0;i<ncells;++i) {
-    collisionData[i].maxCollisionRate = sigmak*vtemp ;
-    collisionData[i].collisionRemainder = ranf() ;
-  }
+__global__
+void initializeCollision_gpu(collisionInfo_gpu_raw collisionData, 
+  float sigmak, float vtemp, curandState *rand) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  if(idx >= collisionData.num_cells) return;
+
+  curandState local_rand_state = rand[idx];
+  float rand_result = curand_uniform(&local_rand_state);
+  rand[idx] = local_rand_state;
+
+  collisionData.maxCollisionRate[idx] = sigmak*vtemp ;
+  collisionData.collisionRemainder[idx] = rand_result ;
 }
 
 
@@ -458,6 +463,7 @@ int main(int ac, char *av[]) {
   particle_gpu_h_d particles(ni*nj*nk, nj*nk, mppc);
   vector<cellSample> cellData(ni*nj*nk) ;
   vector<collisionInfo> collisionData(ni*nj*nk) ;
+  collisionInfo_gpu collisionData_gpu(ni*nj*nk);
 
   // Compute reasonable timestep
   float deltax = 2./float(max(max(ni,nj),nk)) ;
@@ -496,7 +502,9 @@ int main(int ac, char *av[]) {
     seed, rand4State_ptr, randState_5_ptr, rand4State_6_ptr);
     
   // Begin simulation.  Initialize collision data
-  initializeCollision(collisionData,vtemp) ;
+  // initializeCollision(collisionData,vtemp) ;
+  initializeCollision_gpu<<<ni*nj*nk/thrds_per_block+1 ,thrds_per_block>>>(
+    collisionData_gpu.raw_pointers,sigmak,vtemp,rand4State_6_ptr) ;
 
   bool pass = true;
 #ifdef DEBUG

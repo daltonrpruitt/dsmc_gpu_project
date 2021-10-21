@@ -316,6 +316,7 @@ struct cellSample_gpu {
 
 struct collisionInfo_gpu_raw {
   float *maxCollisionRate = nullptr, *collisionRemainder = nullptr;
+  int num_cells = -1;
 };
 
 // Information that is used to control the collision probability code
@@ -330,6 +331,7 @@ struct collisionInfo_gpu {
   device_vector<float> d_collisionRemainder ;
 
   collisionInfo_gpu_raw raw_pointers;
+  int num_cells;
 
   void copy_host_to_device() {
     d_maxCollisionRate = h_maxCollisionRate;
@@ -339,11 +341,13 @@ struct collisionInfo_gpu {
   void set_raw_device_pointers() {
     raw_pointers.maxCollisionRate = thrust::raw_pointer_cast(d_maxCollisionRate.data());
     raw_pointers.collisionRemainder = thrust::raw_pointer_cast(d_collisionRemainder.data());
+    raw_pointers.num_cells = num_cells;
   }
 
   collisionInfo_gpu(int total_cells) {
     h_maxCollisionRate = host_vector<float>(total_cells, 0);
     h_collisionRemainder = host_vector<float>(total_cells, 0);
+    num_cells = total_cells;
     copy_host_to_device();
     set_raw_device_pointers();
   }
