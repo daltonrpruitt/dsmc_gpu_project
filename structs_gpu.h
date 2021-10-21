@@ -254,6 +254,8 @@ struct cellSample_gpu_raw {
   int *nparticles = nullptr;
   float *vx = nullptr, *vy = nullptr, *vz = nullptr,
         *energy = nullptr;
+  int num_cells = -1;
+
 };
 
 // Information that is sampled from the particles to the cells over
@@ -268,6 +270,8 @@ struct cellSample_gpu {
   device_vector<float> d_energy ;                // total kinetic energy of particles
 
   cellSample_gpu_raw raw_pointers; 
+
+  int num_cells;
   
   void copy_host_to_device() {
     d_nparticles = h_nparticles;
@@ -285,9 +289,11 @@ struct cellSample_gpu {
     raw_pointers.vy = thrust::raw_pointer_cast(d_vel_y.data());
     raw_pointers.vz = thrust::raw_pointer_cast(d_vel_z.data());
     raw_pointers.energy = thrust::raw_pointer_cast(d_energy.data());
+    raw_pointers.num_cells = num_cells;
   }
 
   cellSample_gpu(int total_cells) {
+    num_cells = total_cells;
     h_nparticles = host_vector<int>(total_cells, 0);
     h_vel_x = host_vector<float>(total_cells, 0);
     h_vel_y = host_vector<float>(total_cells, 0);
