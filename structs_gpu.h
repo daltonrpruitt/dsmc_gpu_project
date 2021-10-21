@@ -198,6 +198,13 @@ struct particle_gpu_h_d {
     printf(" particles=%d ; spots total=%zu \n", num_valid_particles, h_type.size());
   }
 
+  /**
+   * Prints a small sample of particles and various data
+   *  
+   *  version bit set |  data output added
+   *         0        |   velocity
+   *         1        |    index
+   */
   void print_small_sample(int version=0) {
     sort_particles_by_validity();
     copy_device_vector_to_host();
@@ -211,7 +218,7 @@ struct particle_gpu_h_d {
           printf("     Invalid Particle     ");
         printf(" |");
       }
-      if(version > 0){ 
+      if(version % 2){ 
         printf("\n  Vel:");
         for(int j=0; j<6; ++j) {
           int idx = i + j;
@@ -223,6 +230,19 @@ struct particle_gpu_h_d {
           printf("    ");
         }
       }
+      if(version >> 1 % 2){ 
+        printf("\n  Index:");
+        for(int j=0; j<6; ++j) {
+          int idx = i + j;
+          printf("   ");
+          if(h_type[idx] != -1)
+            printf("         %06d           ", h_index[idx]);
+          else
+            printf("    Invalid Particle    ");
+          printf("    ");
+        }
+      }
+
       printf("\n");
     }
     printf("\n");
