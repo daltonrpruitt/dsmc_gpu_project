@@ -362,4 +362,21 @@ struct collisionInfo_gpu {
     return *this;
   }
 
+  void copy_device_to_host() {
+    thrust::copy(d_maxCollisionRate.begin(), d_maxCollisionRate.end(), h_maxCollisionRate.begin());
+    thrust::copy(d_collisionRemainder.begin(), d_collisionRemainder.end(), h_collisionRemainder.begin());
+  }
+
+  void print_sample(){
+    copy_device_to_host();
+    printf("idx: maxCollisionRate(*10^27),collisionRemainder\n");
+    for(int i=0; i<300; i+=50 ) {
+      for(int j=0; j<6; ++j) {
+        int idx = i + j;
+        printf("%4d: %1.5f,%1.5f |",idx,h_maxCollisionRate[idx]*1e27,h_collisionRemainder[idx]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
 } ;
