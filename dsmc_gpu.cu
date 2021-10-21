@@ -575,7 +575,7 @@ int main(int ac, char *av[]) {
 #ifdef DEBUG
     printf("After indexParticles...\n");
     particles.print_size();
-    particles.print_small_sample(3);
+    particles.print_small_sample(2);
 
 #endif
 
