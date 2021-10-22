@@ -565,7 +565,7 @@ int main(int ac, char *av[]) {
 
     particles.sort_particles_by_validity();
 #ifdef DEBUG
-    printf("Num Blocks for indexParticles: %d",particles.num_valid_particles/ thrds_per_block+1);
+    printf("Num Blocks for indexParticles: %d\n",particles.num_valid_particles/ thrds_per_block+1);
 #endif
     // Compute cell index for particles based on their current
     // locations
