@@ -612,6 +612,12 @@ int main(int ac, char *av[]) {
     cellData_gpu.print_sample();
 #endif
 
+    particles.sort_valid_particles_by_index();
+#ifdef DEBUG
+    printf("After sort by index...\n");
+    particles.print_sample(2);
+#endif
+exit(EXIT_SUCCESS);
     // Compute particle collisions
     collideParticles(particleVec,collisionData,cellData,nsample,
                      cellvol,deltaT) ;
