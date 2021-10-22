@@ -205,7 +205,7 @@ struct particle_gpu_h_d {
    *         0        |   velocity
    *         1        |    index
    */
-  void print_small_sample(int version=0) {
+  void print_sample(int version=0) {
     sort_particles_by_validity();
     copy_device_vector_to_host();
     for(int i=0; i<1000; i+=200 ) {

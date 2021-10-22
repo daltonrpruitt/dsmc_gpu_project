@@ -541,7 +541,7 @@ int main(int ac, char *av[]) {
     if(!pass) return -1;
 #ifdef DEBUG
     printf("After initializeBoundaries_gpu...\n");
-    particles.print_small_sample(1);    
+    particles.print_sample(1);    
     for(int i=particles.num_valid_particles - 6; i<particles.num_valid_particles + 6; i+=6 ) {
       for(int j=0; j<6; ++j) {
         int idx = i + j;
@@ -561,7 +561,7 @@ int main(int ac, char *av[]) {
 
 #ifdef DEBUG
     printf("After moveParticlesWithBCs...\n");
-    particles.print_small_sample();
+    particles.print_sample();
 #endif
 
     particleVec = particles.get_valid_particles();
@@ -574,7 +574,7 @@ int main(int ac, char *av[]) {
 #ifdef DEBUG
     printf("After removeOutsideParticles...\n");
     particles.print_size();
-    particles.print_small_sample();
+    particles.print_sample();
 #endif
 
     particles.sort_particles_by_validity();
@@ -589,7 +589,7 @@ int main(int ac, char *av[]) {
 #ifdef DEBUG
     printf("After indexParticles...\n");
     particles.print_size();
-    particles.print_small_sample(2);
+    particles.print_sample(2);
 
 #endif
 
