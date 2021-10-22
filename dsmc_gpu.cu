@@ -223,25 +223,35 @@ void indexParticles_gpu(particle_gpu_raw particles, int ni, int nj, int nk) {
 }
 
 // Initialize the sampled cell variables to zero
-void initializeSample(vector<cellSample> &cellSample) {
-  for(size_t i=0;i<cellSample.size();++i) {
-    cellSample[i].nparticles = 0 ;
-    cellSample[i].vel = vect3d(0,0,0) ;
-    cellSample[i].energy=0 ;
-  }
+__global__
+void initializeSample_gpu(cellSample_gpu_raw cellSample) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;  
+  if(idx >= cellSample.num_cells) return;
+  cellSample.nparticles[idx] = 0 ;
+  cellSample.vx[idx] = 0 ;
+  cellSample.vy[idx] = 0 ;
+  cellSample.vz[idx] = 0 ;
+  cellSample.energy[idx] = 0 ;
 }
 
 // Sum particle information to cell samples, this will be used to compute
 // collision probabilities
-void sampleParticles(vector<cellSample> &cellData, 
-                     const vector<particle> &particleVec) {
-  vector<particle>::const_iterator ii ;
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    if (ii->type == -1) continue;
-    int i = ii->index ;
-    cellData[i].nparticles++ ;
-    cellData[i].vel += ii->vel ;
-    cellData[i].energy += .5*dot(ii->vel,ii->vel) ;
+__global__
+void sampleParticles_gpu(cellSample_gpu_raw cellData, 
+                         particle_gpu_raw particles) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;  
+  if(idx >= particles.num_valid_particles) return;
+  int index = particles.index[idx] ;
+  atomicInc(&cellData.nparticles[index],particles.num_valid_particles) ;
+  float vx = particles.vx[idx] ;
+  float vy = particles.vy[idx] ;
+  float vz = particles.vz[idx] ;
+  
+  atomicAdd(&cellData.vx[index],vx) ;
+  atomicAdd(&cellData.vy[index],vy) ;
+  atomicAdd(&cellData.vz[index],vz) ;
+
+  atomicAdd(&cellData.energy[index], .5*(vx*vx + vy*vy + vz*vz) ) ;
   }
 } 
   
@@ -461,7 +471,11 @@ int main(int ac, char *av[]) {
   // Create simulation data structures 
   vector<particle> particleVec ;
   particle_gpu_h_d particles(ni*nj*nk, nj*nk, mppc);
+
   vector<cellSample> cellData(ni*nj*nk) ;
+  cellSample_gpu cellData_gpu(ni*nj*nk);
+
+
   vector<collisionInfo> collisionData(ni*nj*nk) ;
   collisionInfo_gpu collisionData_gpu(ni*nj*nk);
 
@@ -581,17 +595,21 @@ int main(int ac, char *av[]) {
 
     // If time to reset cell samples, reinitialize data
     if(n%sample_reset == 0 ) {
-      initializeSample(cellData) ;
+      initializeSample_gpu<<<ni*nj*nk/thrds_per_block+1 ,thrds_per_block>>>(cellData_gpu.raw_pointers) ;
+      nsample = 0 ;
 #ifdef DEBUG
       printf("After initializeSample...\n");
+      cellData_gpu.print_sample();
 #endif
-      nsample = 0 ;
     }
+
     // Sample particle information to cells
     nsample++ ;
-    sampleParticles(cellData,particleVec) ;
+    sampleParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
+      cellData_gpu.raw_pointers,particles.raw_pointers) ;
 #ifdef DEBUG
       printf("After sampleParticles...\n");
+    cellData_gpu.print_sample();
 #endif
 
     // Compute particle collisions

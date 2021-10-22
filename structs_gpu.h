@@ -251,7 +251,7 @@ struct particle_gpu_h_d {
 
 
 struct cellSample_gpu_raw {
-  int *nparticles = nullptr;
+  unsigned int *nparticles = nullptr;
   float *vx = nullptr, *vy = nullptr, *vz = nullptr,
         *energy = nullptr;
   int num_cells = -1;
@@ -261,11 +261,11 @@ struct cellSample_gpu_raw {
 // Information that is sampled from the particles to the cells over
 // several timesteps
 struct cellSample_gpu {
-  host_vector<int> h_nparticles ;            // total number of particles sampled
+  host_vector<unsigned int> h_nparticles ;            // total number of particles sampled
   host_vector<float> h_vel_x, h_vel_y, h_vel_z;  // total velocity vector
   host_vector<float> h_energy ;                // total kinetic energy of particles
 
-  device_vector<int> d_nparticles ;            // total number of particles sampled
+  device_vector<unsigned int> d_nparticles ;            // total number of particles sampled
   device_vector<float> d_vel_x, d_vel_y, d_vel_z;  // total velocity vector
   device_vector<float> d_energy ;                // total kinetic energy of particles
 
@@ -294,7 +294,7 @@ struct cellSample_gpu {
 
   cellSample_gpu(int total_cells) {
     num_cells = total_cells;
-    h_nparticles = host_vector<int>(total_cells, 0);
+    h_nparticles = host_vector<unsigned int>(total_cells, 0);
     h_vel_x = host_vector<float>(total_cells, 0);
     h_vel_y = host_vector<float>(total_cells, 0);
     h_vel_z = host_vector<float>(total_cells, 0);
@@ -317,6 +317,27 @@ struct cellSample_gpu {
     return *this;
   }
 
+  void copy_device_to_host() {
+    thrust::copy(d_nparticles.begin(), d_nparticles.end(), h_nparticles.begin());
+    thrust::copy(d_vel_x.begin(), d_vel_x.end(), h_vel_x.begin());
+    thrust::copy(d_vel_y.begin(), d_vel_y.end(), h_vel_y.begin());
+    thrust::copy(d_vel_z.begin(), d_vel_z.end(), h_vel_z.begin());
+    thrust::copy(d_energy.begin(), d_energy.end(), h_energy.begin());
+  }
+
+  void print_sample(){
+    copy_device_to_host();
+    printf("idx: #particles,vel(x,y,z),energy\n");
+    for(int i=0; i<300; i+=50 ) {
+      for(int j=0; j<4; ++j) {
+        int idx = i + j;
+        printf("%4d: %2d,(%1.1e,%1.1e,%1.1e),%1.1e |",
+          idx,h_nparticles[idx],h_vel_x[idx],h_vel_y[idx],h_vel_z[idx],h_energy[idx]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
 
 } ;
 
