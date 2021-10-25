@@ -7,6 +7,7 @@
 #include <thrust/tuple.h>
 #include <thrust/sort.h>
 #include <thrust/count.h>
+#include <thrust/execution_policy.h>
 #include "structs.h"
 #include "vect3d.h"
 
