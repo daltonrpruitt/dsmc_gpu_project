@@ -257,12 +257,19 @@ void sampleParticles_gpu(cellSample_gpu_raw cellData,
   
 
 // Compute particle collisions
-void collideParticles(vector<particle> &particleVec,
-                      vector<collisionInfo> &collisionData,
-                      const vector<cellSample> &cellData,
-                      int nsample, float cellvol, float deltaT) {
-  int ncells = cellData.size() ;
+__global__
+void collideParticles_gpu(particle_gpu_raw particles,
+                      collisionInfo_gpu_raw collisionData,
+                      cellSample_gpu_raw cellData,
+                      int nsample, float cellvol, float deltaT,
+                      particle_count_map_gpu_raw mapping,
+                      curandStatePhilox4_32_10_t *rand4) {
+  int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  if(idx >= mapping.num_occupied_cells) return;
+  int cell_idx = mapping.cell_idxs[idx];
 
+  // Do not need mapping generation, as have already
+  /*
   // Compute number of particles per cell and compute a set of pointers
   // from each cell to the corresponding particles
   vector<int> np(ncells),cnt(ncells) ;
@@ -292,25 +299,27 @@ void collideParticles(vector<particle> &particleVec,
     pmap[cnt[i]+offsets[i]] = &(*ii) ;
     cnt[i]++ ;
   }
+  */
   // Loop over cells and select particles to perform collisions
-  for(int i=0;i<ncells;++i) {
+  //for(int i=0;i<ncells;++i) {
     // Compute mean and instantaneous particle numbers for the cell
-    float n_mean = float(cellData[i].nparticles)/float(nsample) ;
-    float n_instant = np[i] ;
+    float n_mean = float(cellData.nparticles[cell_idx])/float(nsample) ;
+    float n_instant = mapping.particle_counts[idx]; //np[i] ;
     // Compute a number of particles that need to be selected for
     // collision tests
-    float select = n_instant*n_mean*pnum*collisionData[i].maxCollisionRate*deltaT/cellvol + collisionData[i].collisionRemainder ;
+    float select = n_instant*n_mean*pnum*collisionData.maxCollisionRate[cell_idx]*deltaT/cellvol + 
+          collisionData.collisionRemainder[cell_idx] ;
     // We can only check an integer number of collisions in any timestep
     int nselect = int(select) ;
     // The remainder collision fraction is saved for next timestep
-    collisionData[i].collisionRemainder = select - float(nselect) ;
+    collisionData.collisionRemainder[cell_idx] = select - float(nselect) ;
     if(nselect > 0) { // selected particles for collision
-      if(np[i] < 2) { // if not enough particles for collision, wait until
+      if(mapping.particle_counts[idx] < 2) { // if not enough particles for collision, wait until
         // we have enough
-        collisionData[i].collisionRemainder += nselect ;
+        collisionData[cell_idx].collisionRemainder += nselect ;
       } else {
         // Select nselect particles for possible collision
-        float cmax = collisionData[i].maxCollisionRate ;
+        float cmax = collisionData[cell_idx].maxCollisionRate ;
         for(int c=0;c<nselect;++c) {
           // select two points in the cell
           int pt1 = min(int(floor(ranf()*n_instant)),np[i]-1) ;
@@ -622,13 +631,15 @@ int main(int ac, char *av[]) {
     mapping.print_size();
     mapping.print_sample();      
 #endif
-exit(EXIT_SUCCESS);
+
     // Compute particle collisions
-    collideParticles(particleVec,collisionData,cellData,nsample,
-                     cellvol,deltaT) ;
+    collideParticles_gpu(particleVec,collisionData,cellData,nsample,
+                     cellvol,deltaT,mapping.raw_pointers, rand4State_ptr) ;
 #ifdef DEBUG
       printf("After collideParticles...\n");
+      particles.print_sample(4);      
 #endif
+exit(EXIT_SUCCESS);
 
     // print out progress
     if((n&0xf) == 0) {
