@@ -252,7 +252,6 @@ void sampleParticles_gpu(cellSample_gpu_raw cellData,
   atomicAdd(&cellData.vz[index],vz) ;
 
   atomicAdd(&cellData.energy[index], .5*(vx*vx + vy*vy + vz*vz) ) ;
-  }
 } 
   
 
