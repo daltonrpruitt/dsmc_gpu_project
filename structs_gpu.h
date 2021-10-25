@@ -260,6 +260,64 @@ struct particle_gpu_h_d {
   }
 } ;
 
+struct particle_count_map_gpu_raw {
+  int *cell_idxs = nullptr, *particle_counts = nullptr;
+  int num_occupied_cells = -1;
+};
+
+struct particle_count_map {
+  device_vector<int> cell_idxs;
+  device_vector<int> particle_counts;
+  particle_count_map_gpu_raw raw_pointers;
+  int num_occupied_cells = -1;
+
+  particle_count_map(int num_cells) {
+    cell_idxs = device_vector<float>(num_cells, 0);
+    particle_counts = device_vector<float>(num_cells, 0);
+  }
+
+
+  void map_particles_to_cells(particle_gpu_h_d particles) {
+    particles.sort_valid_particles_by_index(); // this is necessary since reduce_by_key() only reduces contiguously
+
+    thrust::pair<IntIter, IntIter> map_ends;
+
+    map_ends = thrust::reduce_by_key(thrust::device,
+      particles.d_index.begin(), particles.d_index.end(), thrust::make_constant_iterator(1),
+      cell_idxs.begin(), particle_counts.begin());
+    
+    num_occupied_cells = map_ends.first - cell_idxs.begin();
+    set_raw_pointers();
+  }
+   
+  void set_raw_pointers() {
+    raw_pointers.num_occupied_cells = num_occupied_cells; 
+    raw_pointers.cell_idxs = thrust::raw_pointer_cast(cell_idxs.data());
+    raw_pointers.particle_counts = thrust::raw_pointer_cast(particle_counts.data());
+  }
+
+  void print_size() {
+    printf("Num of cells with particles = %d\n", num_occupied_cells);
+  }
+
+  void print_sample() {
+    host_vector<int> h_idxs(cell_idxs.size()), h_counts(particle_counts.size());
+    thrust::copy(cell_idxs.begin(), cell_idxs.end(), h_idxs.begin());
+    thrust::copy(particle_counts.begin(), particle_counts.end(), h_counts.begin());
+
+    printf("Particle Counts: (Idx:Count)\n");
+    for(int i=0; i<4; ++i) {
+      printf("   ");
+      for(int j=0; j<10; ++j) {
+        int idx = i + j;
+        printf("%5d:%-5d |",h_idxs[idx],h_counts[idx]);
+      }
+      printf("\n");
+    }
+  }
+};
+
+
 
 struct cellSample_gpu_raw {
   unsigned int *nparticles = nullptr;

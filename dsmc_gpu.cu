@@ -612,10 +612,15 @@ int main(int ac, char *av[]) {
     cellData_gpu.print_sample();
 #endif
 
-    particles.sort_valid_particles_by_index();
+    particle_count_map mapping(ni*nj*nk);
+    mapping.map_particles_to_cells(particles);
 #ifdef DEBUG
-    printf("After sort by index...\n");
+    printf("After sort by index...\n"); // inside map()
     particles.print_sample(2);
+
+    printf("After particle count mapping...\n");
+    mapping.print_size();
+    mapping.print_sample();      
 #endif
 exit(EXIT_SUCCESS);
     // Compute particle collisions
