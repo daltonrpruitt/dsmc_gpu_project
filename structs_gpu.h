@@ -213,8 +213,9 @@ struct particle_gpu_h_d {
    * Prints a small sample of particles and various data
    *  
    *  version bit set |  data output added
-   *         0        |   velocity
-   *         1        |    index
+   *         0        |      velocity
+   *         1        |      index
+   *         2        |      type
    */
   void print_sample(int version=0) {
     sort_particles_by_validity();
@@ -229,7 +230,7 @@ struct particle_gpu_h_d {
           printf("     Invalid Particle     ");
         printf(" |");
       }
-      if(version % 2){ 
+      if(0b0001 & version){ 
         printf("\n  Vel:");
         for(int j=0; j<6; ++j) {
           int idx = i + j;
@@ -241,7 +242,7 @@ struct particle_gpu_h_d {
           printf("    ");
         }
       }
-      if(version >> 1 % 2){ 
+      if(0b0010 & version){ 
         printf("\n  Index:");
         for(int j=0; j<6; ++j) {
           int idx = i + j;
