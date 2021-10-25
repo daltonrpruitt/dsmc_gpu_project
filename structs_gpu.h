@@ -254,7 +254,18 @@ struct particle_gpu_h_d {
           printf("    ");
         }
       }
-
+      if(0b0100 & version){ 
+        printf("\n   Type:");
+        for(int j=0; j<6; ++j) {
+          int idx = i + j;
+          printf("   ");
+          if(h_type[idx] != -1)
+            printf("         %06d           ", h_type[idx]);
+          else
+            printf("    Invalid Particle    ");
+          printf("    ");
+        }
+      }
       printf("\n");
     }
     printf("\n");
