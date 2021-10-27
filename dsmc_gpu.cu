@@ -559,7 +559,7 @@ int main(int ac, char *av[]) {
   // Begin simulation.  Initialize collision data
   // initializeCollision(collisionData,vtemp) ;
   initializeCollision_gpu<<<ni*nj*nk/thrds_per_block+1 ,thrds_per_block>>>(
-    collisionData_gpu.raw_pointers,sigmak,vtemp,rand4State_6_ptr) ;
+    collisionData_gpu.raw_pointers,sigmak,vtemp,randState_6_ptr) ;
 #ifdef DEBUG
   printf("Collision data num_cells=%d\n",collisionData_gpu.num_cells);
   collisionData_gpu.print_sample();
