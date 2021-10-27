@@ -59,10 +59,11 @@ inline double ranf() {
 }
 
 // Computes a unit vector with a random orientation and uniform distribution
-inline vect3d randomDir() {
-  double B = 2.*ranf()-1 ;
-  double A = sqrt(1.-B*B) ;
-  double theta = ranf()*2*M_PI ;
+__device__
+inline vect3d randomDir(float rand1, float rand2) {
+  double B = 2. * rand1-1;
+  double A = sqrt(1.-B*B);
+  double theta = rand2*2*M_PI;
   return vect3d(B,A*cos(theta),A*sin(theta)) ;
 }
 
@@ -125,13 +126,11 @@ void initializeBoundaries_gpu(
     double t = max(rand_results4.w, 1e-200);
     double speed = vtemp * sqrt(-log(t));
 
-    double B = 2. * rand_result_5-1;
-    double A = sqrt(1.-B*B);
-    double theta = rand_result_6*2*M_PI;
+    vect3d vel = randomDir(rand_result_5, rand_result_6);
 
-    particles.vx[idx*mppc + m] = B * speed + vmean;
-    particles.vy[idx*mppc + m] = A * cos(theta) * speed;
-    particles.vz[idx*mppc + m] = A * sin(theta) * speed;
+    particles.vx[idx*mppc + m] = vel.x * speed + vmean;
+    particles.vy[idx*mppc + m] = vel.y * speed;
+    particles.vz[idx*mppc + m] = vel.z * speed;
 
     particles.type[idx*mppc + m] = 0;
     particles.index[idx*mppc + m] = 0;
