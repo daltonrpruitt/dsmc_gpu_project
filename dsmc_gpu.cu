@@ -519,9 +519,9 @@ int main(int ac, char *av[]) {
   
   curandStatePhilox4_32_10_t * rand4State_ptr = raw_pointer_cast(rand4State.data());
   curandState * randState_5_ptr = raw_pointer_cast(randState_5.data());
-  curandState * rand4State_6_ptr = raw_pointer_cast(randState_6.data());
+  curandState * randState_6_ptr = raw_pointer_cast(randState_6.data());
   init_rands<<<thrds_per_block, num_cells/thrds_per_block>>> (
-    seed, rand4State_ptr, randState_5_ptr, rand4State_6_ptr);
+    seed, rand4State_ptr, randState_5_ptr, randState_6_ptr);
     
   // Begin simulation.  Initialize collision data
   // initializeCollision(collisionData,vtemp) ;
@@ -543,7 +543,7 @@ int main(int ac, char *av[]) {
     // Add particles at inflow boundaries
     initializeBoundaries_gpu<<<nj*nk/thrds_per_block, thrds_per_block>>>(
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
-                            rand4State_ptr, randState_5_ptr, rand4State_6_ptr) ;
+                            rand4State_ptr, randState_5_ptr, randState_6_ptr) ;
     cudaDeviceSynchronize();
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
     if(!pass) return -1;
