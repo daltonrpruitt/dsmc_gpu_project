@@ -274,19 +274,23 @@ struct particle_gpu_h_d {
 } ;
 
 struct particle_count_map_gpu_raw {
-  int *cell_idxs = nullptr, *particle_counts = nullptr;
+  int *cell_idxs = nullptr, *particle_counts = nullptr, 
+      *particle_offsets = nullptr;
   int num_occupied_cells = -1;
 };
 
 struct particle_count_map {
   device_vector<int> cell_idxs;
   device_vector<int> particle_counts;
+  device_vector<int> particle_offsets;
+
   particle_count_map_gpu_raw raw_pointers;
   int num_occupied_cells = -1;
 
   particle_count_map(int num_cells) {
     cell_idxs = device_vector<float>(num_cells, 0);
     particle_counts = device_vector<float>(num_cells, 0);
+    particle_offsets = device_vector<float>(num_cells, 0);
   }
 
 
@@ -299,6 +303,7 @@ struct particle_count_map {
       particles.d_index.begin(), particles.d_index.end(), thrust::make_constant_iterator(1),
       cell_idxs.begin(), particle_counts.begin());
     
+    thrust::exclusive_scan(particle_counts.begin(), particle_counts.end(), particle_offsets.begin()); 
     num_occupied_cells = map_ends.first - cell_idxs.begin();
     set_raw_pointers();
   }
@@ -307,6 +312,7 @@ struct particle_count_map {
     raw_pointers.num_occupied_cells = num_occupied_cells; 
     raw_pointers.cell_idxs = thrust::raw_pointer_cast(cell_idxs.data());
     raw_pointers.particle_counts = thrust::raw_pointer_cast(particle_counts.data());
+    raw_pointers.particle_offsets = thrust::raw_pointer_cast(particle_offsets.data());
   }
 
   void print_size() {
