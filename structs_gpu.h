@@ -320,9 +320,11 @@ struct particle_count_map {
   }
 
   void print_sample() {
-    host_vector<int> h_idxs(cell_idxs.size()), h_counts(particle_counts.size());
+    host_vector<int> h_idxs(cell_idxs.size()), h_counts(particle_counts.size()), 
+                     h_offsets(particle_offsets.size());
     thrust::copy(cell_idxs.begin(), cell_idxs.end(), h_idxs.begin());
     thrust::copy(particle_counts.begin(), particle_counts.end(), h_counts.begin());
+    thrust::copy(particle_offsets.begin(), particle_offsets.end(), h_offsets.begin());
 
     printf("Particle Counts: (Idx:Count)\n");
     for(int i=0; i<4; ++i) {
@@ -333,6 +335,16 @@ struct particle_count_map {
       }
       printf("\n");
     }
+    printf("Particle Offsets: (Idx:Offset)\n");
+    for(int i=0; i<4; ++i) {
+      printf("   ");
+      for(int j=0; j<10; ++j) {
+        int idx = i + j;
+        printf("%5d:%-5d |",h_idxs[idx],h_offsets[idx]);
+      }
+      printf("\n");
+    }
+
   }
 };
 
