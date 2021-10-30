@@ -552,14 +552,7 @@ int main(int ac, char *av[]) {
 #ifdef DEBUG
     printf("After initializeBoundaries_gpu...\n");
     particles.print_sample(1);    
-    for(int i=particles.num_valid_particles - 6; i<particles.num_valid_particles + 6; i+=6 ) {
-      for(int j=0; j<6; ++j) {
-        int idx = i + j;
-        printf("%4d:(%1.5f,%1.5f,%1.5f) | ", idx, particles.h_pos_x[idx], particles.h_pos_y[idx], particles.h_pos_z[idx]);
-      }
-      printf("\n");
-    }
-    printf("\n");
+    particles.print_sample(4, particles.num_valid_particles-12, 6);
 #else
     particles.sort_particles_by_validity();
 #endif
