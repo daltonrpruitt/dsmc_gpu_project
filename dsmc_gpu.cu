@@ -660,7 +660,7 @@ int main(int ac, char *av[]) {
 
     // print out progress
     if((n&0xf) == 0) {
-      cout << n << ' ' << particleVec.size() << endl ;
+      cout << n << ' ' << particles.num_valid_particles << endl ;
     }
     // particles = particleVec;
   }
