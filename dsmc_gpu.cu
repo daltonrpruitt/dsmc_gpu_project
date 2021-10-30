@@ -273,37 +273,6 @@ void collideParticles_gpu(particle_gpu_raw particles,
   curandState local_rand_6 = rand6[idx];
 
   // Do not need mapping generation, as have already
-  /*
-  // Compute number of particles per cell and compute a set of pointers
-  // from each cell to the corresponding particles
-  vector<int> np(ncells),cnt(ncells) ;
-  for(int i=0;i<ncells;++i) {
-    np[i] = 0 ;
-    cnt[i] = 0 ;
-  }
-  vector<particle>::iterator ii ;
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    if (ii->type == -1) continue;
-    int i = ii->index ;
-    np[i]++ ;
-  }
-  // Offsets will contain the index in the pmap data structure where
-  // the pointers to particles for the given cell will begin
-  vector<int> offsets(ncells+1) ;
-  offsets[0] = 0 ;
-  for(int i=0;i<ncells;++i)
-    offsets[i+1] = offsets[i]+np[i] ;
-  // pmap is a structure of pointers from cells to particles, note
-  // since there may be many particles per cell, the offsets need to
-  // be used to access particles from this data structure.
-  vector<particle *> pmap(offsets[ncells]) ;
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    if (ii->type == -1) continue;
-    int i = ii->index ;
-    pmap[cnt[i]+offsets[i]] = &(*ii) ;
-    cnt[i]++ ;
-  }
-  */
   // Loop over cells and select particles to perform collisions
   //for(int i=0;i<ncells;++i) {
     // Compute mean and instantaneous particle numbers for the cell
