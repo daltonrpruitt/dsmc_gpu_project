@@ -543,7 +543,7 @@ int main(int ac, char *av[]) {
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
     // Add particles at inflow boundaries
-    initializeBoundaries_gpu<<<nj*nk/thrds_per_block, thrds_per_block>>>(
+    initializeBoundaries_gpu<<<nj*nk/thrds_per_block+1, thrds_per_block>>>(
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
                             rand4State_ptr, randState_5_ptr, randState_6_ptr) ;
     cudaDeviceSynchronize();
