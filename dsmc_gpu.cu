@@ -597,6 +597,9 @@ int main(int ac, char *av[]) {
     // locations
     indexParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
       particles.raw_pointers,ni,nj,nk) ;
+    cudaDeviceSynchronize();
+    cudaErrChk(cudaGetLastError(), "indexParticles_gpu", pass);
+    if(!pass) return -1;
 
 #ifdef DEBUG
     printf("After indexParticles...\n");
@@ -609,6 +612,9 @@ int main(int ac, char *av[]) {
     if(n%sample_reset == 0 ) {
       initializeSample_gpu<<<ni*nj*nk/thrds_per_block+1 ,thrds_per_block>>>(cellData_gpu.raw_pointers) ;
       nsample = 0 ;
+      cudaDeviceSynchronize();
+      cudaErrChk(cudaGetLastError(), "initializeSample_gpu", pass);
+      if(!pass) return -1;
 #ifdef DEBUG
       printf("After initializeSample...\n");
       cellData_gpu.print_sample();
@@ -619,8 +625,11 @@ int main(int ac, char *av[]) {
     nsample++ ;
     sampleParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
       cellData_gpu.raw_pointers,particles.raw_pointers) ;
+    cudaDeviceSynchronize();
+    cudaErrChk(cudaGetLastError(), "sampleParticles_gpu", pass);
+    if(!pass) return -1;
 #ifdef DEBUG
-      printf("After sampleParticles...\n");
+    printf("After sampleParticles...\n");
     cellData_gpu.print_sample();
 #endif
 
@@ -641,6 +650,9 @@ int main(int ac, char *av[]) {
           cellData_gpu.raw_pointers,nsample,cellvol,sigmak,
           deltaT,pnum,mapping.raw_pointers,rand4State_ptr,
           randState_5_ptr,randState_6_ptr) ;
+    cudaDeviceSynchronize();
+    cudaErrChk(cudaGetLastError(), "collideParticles_gpu", pass);
+    if(!pass) return -1;    
 #ifdef DEBUG
       printf("After collideParticles...\n");
       particles.print_sample(4);      
