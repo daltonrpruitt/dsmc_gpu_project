@@ -429,6 +429,28 @@ struct cellSample_gpu {
     thrust::copy(d_energy.begin(), d_energy.end(), h_energy.begin());
   }
 
+  vector<cellSample> slice(int start, int size) {
+    copy_device_to_host();
+    vector<cellSample> samples;
+    for(int i=start; i < start + size; ++i) {
+      cellSample s;
+      s.nparticles = h_nparticles[i];
+      s.vel = vect3d(h_vel_x[i],h_vel_y[i],h_vel_z[i]);
+      s.energy = h_energy[i];
+
+      samples.push_back(s);
+    }
+    return samples;
+  }
+
+  vector<cellSample> slice(int size) {
+    return slice(0, size);
+  }
+
+  vector<cellSample> to_vector() {
+    return slice(0, num_cells);
+  }
+
   void print_sample(){
     copy_device_to_host();
     printf("idx: #particles,vel(x,y,z),energy\n");

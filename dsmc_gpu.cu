@@ -677,6 +677,8 @@ int main(int ac, char *av[]) {
 
   ofile.close() ;
   
+  cellData = cellData_gpu.to_vector();
+
   // Write out cell sampled data
   ofstream ocfile("cells.dat", ios::out) ;
 
