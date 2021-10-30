@@ -243,7 +243,7 @@ struct particle_gpu_h_d {
           if(h_type[idx] != -1)
             printf("(%1.5f,%1.5f,%1.5f)", h_vel_x[idx], h_vel_y[idx], h_vel_z[idx]);
           else
-            printf("    Invalid Particle    ");
+            printf("           -            ");
           printf("    ");
         }
       }
@@ -255,7 +255,7 @@ struct particle_gpu_h_d {
           if(h_type[idx] != -1)
             printf("         %06d           ", h_index[idx]);
           else
-            printf("    Invalid Particle    ");
+            printf("           -            ");
           printf("    ");
         }
       }
@@ -267,7 +267,7 @@ struct particle_gpu_h_d {
           if(h_type[idx] != -1)
             printf("         %06d           ", h_type[idx]);
           else
-            printf("    Invalid Particle    ");
+            printf("           -            ");
           printf("    ");
         }
       }
