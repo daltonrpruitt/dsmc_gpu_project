@@ -576,7 +576,7 @@ int main(int ac, char *av[]) {
     particles.print_sample();
 #endif
 
-    particleVec = particles.get_valid_particles();
+    // particleVec = particles.get_valid_particles();
     // Remove any particles that are now outside of boundaries
     removeOutsideParticles_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers) ;
     cudaDeviceSynchronize();
@@ -657,13 +657,12 @@ int main(int ac, char *av[]) {
       printf("After collideParticles...\n");
       particles.print_sample(4);      
 #endif
-exit(EXIT_SUCCESS);
 
     // print out progress
     if((n&0xf) == 0) {
       cout << n << ' ' << particleVec.size() << endl ;
     }
-    particles = particleVec;
+    // particles = particleVec;
   }
 
   // Write out final particle data
