@@ -198,7 +198,7 @@ struct particle_gpu_h_d {
       thrust::make_tuple(
         d_pos_x.begin(), d_pos_y.begin(), d_pos_z.begin(), 
         d_vel_x.begin(), d_vel_y.begin(), d_vel_z.begin(),
-        d_index.begin()
+        d_type.begin()
     ));
     thrust::sort_by_key(d_index.begin(), d_index.begin()+num_valid_particles, particles_iterator_tuple);
   }
