@@ -95,7 +95,7 @@ struct particle_gpu_h_d {
   }
 
   particle_gpu_h_d(int total_cells, int inlet_cells, int mppc) {
-    int total_particles = (total_cells + inlet_cells)*mppc;
+    int total_particles = total_cells*mppc*5/4 + inlet_cells*mppc;
     h_pos_x = host_vector<float>(total_particles, 0);
     h_pos_y = host_vector<float>(total_particles, 0);
     h_pos_z = host_vector<float>(total_particles, 0);
