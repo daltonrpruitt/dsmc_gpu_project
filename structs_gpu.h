@@ -334,7 +334,7 @@ struct particle_count_map {
     for(int i=0; i<4; ++i) {
       printf("   ");
       for(int j=0; j<10; ++j) {
-        int idx = i + j;
+        int idx = i*10 + j;
         printf("%5d:%-5d |",h_idxs[idx],h_counts[idx]);
       }
       printf("\n");
