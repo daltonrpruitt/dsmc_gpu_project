@@ -275,41 +275,41 @@ void collideParticles_gpu(particle_gpu_raw particles,
   // Do not need mapping generation, as have already
   // Loop over cells and select particles to perform collisions
   //for(int i=0;i<ncells;++i) {
-    // Compute mean and instantaneous particle numbers for the cell
-    float n_mean = float(cellData.nparticles[cell_idx])/float(nsample) ;
-    float n_instant = mapping.particle_counts[idx]; //np[i] ;
-    // Compute a number of particles that need to be selected for
-    // collision tests
-    float select = n_instant*n_mean*pnum*collisionData.maxCollisionRate[cell_idx]*deltaT/cellvol + 
-          collisionData.collisionRemainder[cell_idx] ;
-    // We can only check an integer number of collisions in any timestep
-    int nselect = int(select) ;
-    // The remainder collision fraction is saved for next timestep
-    collisionData.collisionRemainder[cell_idx] = select - float(nselect) ;
-    if(nselect > 0) { // selected particles for collision
-      if(mapping.particle_counts[idx] < 2) { // if not enough particles for collision, wait until
-        // we have enough
+  // Compute mean and instantaneous particle numbers for the cell
+  float n_mean = float(cellData.nparticles[cell_idx])/float(nsample) ;
+  float n_instant = mapping.particle_counts[idx]; //np[i] ;
+  // Compute a number of particles that need to be selected for
+  // collision tests
+  float select = n_instant*n_mean*pnum*collisionData.maxCollisionRate[cell_idx]*deltaT/cellvol + 
+        collisionData.collisionRemainder[cell_idx] ;
+  // We can only check an integer number of collisions in any timestep
+  int nselect = int(select) ;
+  // The remainder collision fraction is saved for next timestep
+  collisionData.collisionRemainder[cell_idx] = select - float(nselect) ;
+  if(nselect > 0) { // selected particles for collision
+    if(mapping.particle_counts[idx] < 2) { // if not enough particles for collision, wait until
+      // we have enough
       collisionData.collisionRemainder[cell_idx] += nselect ;
-      } else {
+    } else {
       float4 rand_results4 = curand_uniform4(&local_rand4);
       float rand_result_5 = curand_uniform(&local_rand_5);
       float rand_result_6 = curand_uniform(&local_rand_6);
   
-        // Select nselect particles for possible collision
+      // Select nselect particles for possible collision
       float cmax = collisionData.maxCollisionRate[cell_idx] ;
-        for(int c=0;c<nselect;++c) {
-          // select two points in the cell
+      for(int c=0;c<nselect;++c) {
+        // select two points in the cell
         int pt1 = min(int(floor(rand_results4.x*n_instant)),int(n_instant)-1) ;
         int pt2 = min(int(floor(rand_results4.y*n_instant)),int(n_instant)-1) ;
 
-          // Make sure they are unique points
+        // Make sure they are unique points
         // This extended version should not be necessarily most of the time, 
         //   as far as I can guess.
         while(pt1==pt2) {
           pt2 = min(int(floor(rand_result_5*n_instant)),int(n_instant)-1) ;
           rand_result_5 = curand_uniform(&local_rand_5);
         }
-          // Compute the relative velocity of two particles
+        // Compute the relative velocity of two particles
         int particle1_idx = mapping.particle_offsets[idx]+pt1;
         float vx1 = particles.vx[particle1_idx];
         float vy1 = particles.vy[particle1_idx];
@@ -322,21 +322,21 @@ void collideParticles_gpu(particle_gpu_raw particles,
         float vz2 = particles.vz[particle2_idx];
         vect3d v2 = vect3d(vx2, vy2, vz2);
 
-          vect3d vr = v1-v2 ;
-          float vrm = norm(vr) ;
-          // Compute collision  rate for hard sphere model
-          float crate = sigmak*vrm ;
-          if(crate > cmax)
-            cmax = crate ;
-          // Check if these particles actually collide
+        vect3d vr = v1-v2 ;
+        float vrm = norm(vr) ;
+        // Compute collision  rate for hard sphere model
+        float crate = sigmak*vrm ;
+        if(crate > cmax)
+          cmax = crate ;
+        // Check if these particles actually collide
         if(rand_results4.w < crate/collisionData.maxCollisionRate[cell_idx]) {
-            // Collision Accepted, adjust particle velocities
-            // Compute center of mass velocity, vcm
-            vect3d vcm = .5*(v1+v2) ;
-            // Compute random perturbation that conserves momentum
+          // Collision Accepted, adjust particle velocities
+          // Compute center of mass velocity, vcm
+          vect3d vcm = .5*(v1+v2) ;
+          // Compute random perturbation that conserves momentum
           vect3d vp = randomDir(rand_result_5, rand_result_6)*vrm ;
 
-            // Adjust particle velocities to reflect collision
+          // Adjust particle velocities to reflect collision
           vect3d new_v1 = vcm + 0.5*vp;
           vect3d new_v2 = vcm - 0.5*vp;
 
@@ -349,19 +349,19 @@ void collideParticles_gpu(particle_gpu_raw particles,
           particles.vz[particle2_idx] = new_v2.z;
 
 
-            // Bookkeeping to track particle interactions
+          // Bookkeeping to track particle interactions
           int t1 = particles.type[particle1_idx] ;
           int t2 = particles.type[particle2_idx] ;
-            int tc = (t1+t2>0)?1:0 ;
+          int tc = (t1+t2>0)?1:0 ;
           particles.type[particle1_idx] = max(tc,t1) ;
           particles.type[particle2_idx] = max(tc,t2) ;
-          }
         }
-        // Update the maximum collision rate to be used in future timesteps
-        // for determining number of particles to select.
-      collisionData.maxCollisionRate[cell_idx] = cmax ;
       }
+      // Update the maximum collision rate to be used in future timesteps
+      // for determining number of particles to select.
+      collisionData.maxCollisionRate[cell_idx] = cmax ;
     }
+  }
   rand4[idx] = local_rand4;
   rand5[idx] = local_rand_5;
   rand6[idx] = local_rand_6;
