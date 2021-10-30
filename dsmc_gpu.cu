@@ -560,6 +560,8 @@ int main(int ac, char *av[]) {
       printf("\n");
     }
     printf("\n");
+#else
+    particles.sort_particles_by_validity();
 #endif
 
     int blocks = particles.num_valid_particles / thrds_per_block + 1;
