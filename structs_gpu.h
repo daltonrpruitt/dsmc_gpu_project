@@ -175,6 +175,10 @@ struct particle_gpu_h_d {
     return slice(0, size);
   }
 
+  vector<particle> to_vector() {
+    return slice(0, num_valid_particles);
+  }
+
   void sort_particles_by_validity(){
     thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
       thrust::make_tuple(

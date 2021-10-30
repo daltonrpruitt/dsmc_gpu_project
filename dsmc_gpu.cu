@@ -665,12 +665,14 @@ int main(int ac, char *av[]) {
     // particles = particleVec;
   }
 
+  particleVec = particles.to_vector() ;
+  
   // Write out final particle data
   ofstream ofile("particles.dat",ios::out) ;
   vector<particle>::iterator ii ;
-
-  for(ii=particleVec.begin();ii!=particleVec.end();++ii) {
-    ofile << ii->pos.x << ' ' << ii->pos.y << ' ' << ii ->pos.z << ' ' << ii->type << endl ;
+  
+  for(particle p : particleVec) {
+    ofile << p.pos.x << ' ' << p.pos.y << ' ' <<  p.pos.z << ' ' <<  p.type <<  p.index << endl ;
   }
 
   ofile.close() ;
