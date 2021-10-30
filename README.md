@@ -18,3 +18,15 @@ the inflow.  The goal is to solve on at least a 128x128x128 grid using
 a parallel implementation.
 
 
+
+## Current issue
+For some reason, it seems only cells with idx%32 = 0 are being sampled to have
+particles in them. This may be because either indexing is broken, moving particles
+is broken, the correct number of blocks are not launched (which I find unlikely?), 
+or the new particles are being initialized over the old ones. 
+Firstly, I should get rid of the side-effects of the debugging print statements...
+Maybe only have it sort if it has not been sorted?
+Or have a "state" variable that indicates what type of sorting the particles array
+is in? Like -1 for not initialized, 0 with new particles in the end chunk, 1 for 
+sorted by validity (all valid particles near beginning), 2 for sorted by index, and maybe others later?
+No idea how this would be best implemented. 
