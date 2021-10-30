@@ -222,12 +222,12 @@ struct particle_gpu_h_d {
    *         1        |      index
    *         2        |      type
    */
-  void print_sample(int version=0) {
+  void print_sample(int version=0, int start_index = 0, int offset = 200) {
     sort_particles_by_validity();
     copy_device_vector_to_host();
-    for(int i=0; i<1000; i+=200 ) {
+    for(int i=0; i<offset*4; i+=offset) {
       for(int j=0; j<6; ++j) {
-        int idx = i + j;
+        int idx = start_index + i + j;
         printf("%4d:", idx);
         if(h_type[idx] != -1)
           printf("(%1.5f,%1.5f,%1.5f)", h_pos_x[idx], h_pos_y[idx], h_pos_z[idx]);
@@ -238,7 +238,7 @@ struct particle_gpu_h_d {
       if(0b0001 & version){ 
         printf("\n  Vel:");
         for(int j=0; j<6; ++j) {
-          int idx = i + j;
+        int idx = start_index + i + j;
           printf("   ");
           if(h_type[idx] != -1)
             printf("(%1.5f,%1.5f,%1.5f)", h_vel_x[idx], h_vel_y[idx], h_vel_z[idx]);
@@ -250,7 +250,7 @@ struct particle_gpu_h_d {
       if(0b0010 & version){ 
         printf("\n  Index:");
         for(int j=0; j<6; ++j) {
-          int idx = i + j;
+        int idx = start_index + i + j;
           printf("   ");
           if(h_type[idx] != -1)
             printf("         %06d           ", h_index[idx]);
@@ -262,7 +262,7 @@ struct particle_gpu_h_d {
       if(0b0100 & version){ 
         printf("\n   Type:");
         for(int j=0; j<6; ++j) {
-          int idx = i + j;
+        int idx = start_index + i + j;
           printf("   ");
           if(h_type[idx] != -1)
             printf("         %06d           ", h_type[idx]);
