@@ -549,12 +549,12 @@ int main(int ac, char *av[]) {
     cudaDeviceSynchronize();
     cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
     if(!pass) return -1;
+    particles.sort_particles_by_validity();
 #ifdef DEBUG
     printf("After initializeBoundaries_gpu...\n");
+    particles.print_size();
     particles.print_sample(1);    
     particles.print_sample(4, particles.num_valid_particles-12, 6);
-#else
-    particles.sort_particles_by_validity();
 #endif
 
     int blocks = particles.num_valid_particles / thrds_per_block + 1;
@@ -576,12 +576,11 @@ int main(int ac, char *av[]) {
     cudaErrChk(cudaGetLastError(), "removeOutsideParticles_gpu", pass);
     if(!pass) return -1;
 
+    particles.sort_particles_by_validity();
 #ifdef DEBUG
     printf("After removeOutsideParticles...\n");
     particles.print_size();
     particles.print_sample();
-#else
-    particles.sort_particles_by_validity();
 #endif
 
 
