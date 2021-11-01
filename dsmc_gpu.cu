@@ -106,7 +106,7 @@ void initializeBoundaries_gpu(
 
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
   int j = idx / nj;
-  int k = idx * nk;
+  int k = idx % nk;
   double cx = -1-dx ;
   double cy = -1+float(j)*dy ;
   double cz = -1+float(k)*dz ;
