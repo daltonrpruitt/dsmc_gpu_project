@@ -180,16 +180,16 @@ struct particle_gpu_h_d {
     host_vector<int> n_h_type ;
     host_vector<int> n_h_index ;
 
-    h_pos_x = host_vector<float>(new_total_particles, 0);
-    h_pos_y = host_vector<float>(new_total_particles, 0);
-    h_pos_z = host_vector<float>(new_total_particles, 0);
+    n_h_pos_x = host_vector<float>(new_total_particles, 0);
+    n_h_pos_y = host_vector<float>(new_total_particles, 0);
+    n_h_pos_z = host_vector<float>(new_total_particles, 0);
     
-    h_vel_x = host_vector<float>(new_total_particles, 0);
-    h_vel_y = host_vector<float>(new_total_particles, 0);
-    h_vel_z = host_vector<float>(new_total_particles, 0);
+    n_h_vel_x = host_vector<float>(new_total_particles, 0);
+    n_h_vel_y = host_vector<float>(new_total_particles, 0);
+    n_h_vel_z = host_vector<float>(new_total_particles, 0);
    
-    h_type = host_vector<int>(new_total_particles, -1);
-    h_index = host_vector<int>(new_total_particles, 0);
+    n_h_type = host_vector<int>(new_total_particles, -1);
+    n_h_index = host_vector<int>(new_total_particles, 0);
 
     thrust::copy(h_pos_x.begin(), h_pos_x.end(), n_h_pos_x.begin());
     thrust::copy(h_pos_y.begin(), h_pos_y.end(), n_h_pos_y.begin());
