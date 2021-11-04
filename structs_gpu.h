@@ -195,6 +195,7 @@ struct particle_gpu_h_d {
   }
 
   void sort_valid_particles_by_index() {
+    sort_particles_by_validity();
     // Should have sort_particles_by_validity() here, or assume is part of calling computation...?
     thrust::zip_iterator<particlesTuple> particles_iterator_tuple(
       thrust::make_tuple(
