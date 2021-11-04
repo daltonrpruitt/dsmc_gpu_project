@@ -168,6 +168,43 @@ struct particle_gpu_h_d {
     thrust::copy(d_index.begin(), d_index.end(), h_index.begin());
   }
 
+  void resize_for_init_boundaries(int num_inlet_particles){
+    if(num_inlet_particles + num_valid_particles < total_spots) return; 
+
+    int new_total_particles = total_spots+num_inlet_particles*5;
+
+    copy_device_vector_to_host();
+
+    host_vector<float> n_h_pos_x, n_h_pos_y, n_h_pos_z;
+    host_vector<float> n_h_vel_x, n_h_vel_y, n_h_vel_z;
+    host_vector<int> n_h_type ;
+    host_vector<int> n_h_index ;
+
+    h_pos_x = host_vector<float>(new_total_particles, 0);
+    h_pos_y = host_vector<float>(new_total_particles, 0);
+    h_pos_z = host_vector<float>(new_total_particles, 0);
+    
+    h_vel_x = host_vector<float>(new_total_particles, 0);
+    h_vel_y = host_vector<float>(new_total_particles, 0);
+    h_vel_z = host_vector<float>(new_total_particles, 0);
+   
+    h_type = host_vector<int>(new_total_particles, -1);
+    h_index = host_vector<int>(new_total_particles, 0);
+
+    thrust::copy(h_pos_x.begin(), h_pos_x.end(), n_h_pos_x.begin());
+    thrust::copy(h_pos_y.begin(), h_pos_y.end(), n_h_pos_y.begin());
+    thrust::copy(h_pos_z.begin(), h_pos_z.end(), n_h_pos_z.begin());
+    thrust::copy(h_vel_x.begin(), h_vel_x.end(), n_h_vel_x.begin());
+    thrust::copy(h_vel_y.begin(), h_vel_y.end(), n_h_vel_y.begin());
+    thrust::copy(h_vel_z.begin(), h_vel_z.end(), n_h_vel_z.begin());
+    thrust::copy( h_type.begin(),  h_type.end(),  n_h_type.begin());
+    thrust::copy(h_index.begin(), h_index.end(), n_h_index.begin());
+
+    total_spots = new_total_particles;
+    copy_host_to_device();
+    set_raw_device_pointers(num_inlet_particles);
+  }
+
   vector<particle> slice(int start, int size) {
     copy_device_vector_to_host();
     vector<particle> particles;

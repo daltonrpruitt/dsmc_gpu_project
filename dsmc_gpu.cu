@@ -544,6 +544,7 @@ int main(int ac, char *av[]) {
 
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
+    particles.resize_for_init_boundaries(nj*nk*mppc);
     // Add particles at inflow boundaries
     initializeBoundaries_gpu<<<nj*nk/thrds_per_block+1, thrds_per_block>>>(
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
