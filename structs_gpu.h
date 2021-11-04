@@ -139,7 +139,7 @@ struct particle_gpu_h_d {
     copy_host_to_device();
   }
 
-  particle_gpu_h_d operator= (vector<particle> &in_particles) {
+  particle_gpu_h_d& operator= (vector<particle> &in_particles) {
     num_valid_particles = in_particles.size(); 
     for(int i=0; i<num_valid_particles; ++i) {
       h_pos_x[i] = in_particles[i].pos.x;
