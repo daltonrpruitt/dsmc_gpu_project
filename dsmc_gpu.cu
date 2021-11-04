@@ -78,8 +78,9 @@ inline double randVel(double vmp) {
 // Based on https://docs.nvidia.com/cuda/curand/device-api-overview.html#device-api-example
 __global__ 
 void init_rands(long input_seed, curandStatePhilox4_32_10_t *rand4, 
-  curandState *rand5, curandState *rand6) {
+  curandState *rand5, curandState *rand6, int size) {
   int idx = threadIdx.x + blockIdx.x*blockDim.x;
+  if(idx >= size) return;
   unsigned long long seed = input_seed + idx;
   // __device__ void
   //    curand_init (
@@ -524,6 +525,7 @@ int main(int ac, char *av[]) {
   curandState * randState_5_ptr = raw_pointer_cast(randState_5.data());
   curandState * randState_6_ptr = raw_pointer_cast(randState_6.data());
   init_rands<<<num_cells/thrds_per_block + 1, thrds_per_block>>> (
+    seed, rand4State_ptr, randState_5_ptr, randState_6_ptr, num_cells);
     
   // Begin simulation.  Initialize collision data
   // initializeCollision(collisionData,vtemp) ;
