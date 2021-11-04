@@ -523,8 +523,7 @@ int main(int ac, char *av[]) {
   curandStatePhilox4_32_10_t * rand4State_ptr = raw_pointer_cast(rand4State.data());
   curandState * randState_5_ptr = raw_pointer_cast(randState_5.data());
   curandState * randState_6_ptr = raw_pointer_cast(randState_6.data());
-  init_rands<<<thrds_per_block, num_cells/thrds_per_block>>> (
-    seed, rand4State_ptr, randState_5_ptr, randState_6_ptr);
+  init_rands<<<num_cells/thrds_per_block + 1, thrds_per_block>>> (
     
   // Begin simulation.  Initialize collision data
   // initializeCollision(collisionData,vtemp) ;
