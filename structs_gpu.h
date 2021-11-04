@@ -71,7 +71,7 @@ struct particle_gpu_h_d {
 
   }
 
-  void set_raw_device_pointers(int inlet_cells, int mppc) {
+  void set_raw_device_pointers(int inlet_particles) {
     raw_pointers.px = thrust::raw_pointer_cast(d_pos_x.data());
     raw_pointers.py = thrust::raw_pointer_cast(d_pos_y.data());
     raw_pointers.pz = thrust::raw_pointer_cast(d_pos_z.data());
@@ -82,7 +82,7 @@ struct particle_gpu_h_d {
     raw_pointers.index = thrust::raw_pointer_cast(d_index.data());
     raw_pointers.size = d_pos_x.size();
 
-    int offset_to_inlet_cells = raw_pointers.size - inlet_cells*mppc;
+    int offset_to_inlet_cells = raw_pointers.size - inlet_particles;
 
     empty_raw_pointers.px = raw_pointers.px + offset_to_inlet_cells;
     empty_raw_pointers.py = raw_pointers.py + offset_to_inlet_cells;
@@ -92,11 +92,10 @@ struct particle_gpu_h_d {
     empty_raw_pointers.vz = raw_pointers.vz + offset_to_inlet_cells;
     empty_raw_pointers.type = raw_pointers.type + offset_to_inlet_cells;
     empty_raw_pointers.index = raw_pointers.index+ offset_to_inlet_cells;
-    empty_raw_pointers.size = inlet_cells*mppc;
+    empty_raw_pointers.size = inlet_particles;
   }
 
-  particle_gpu_h_d(int total_cells, int inlet_cells, int mppc) {
-    int total_particles = total_cells*mppc*5/4 + inlet_cells*mppc;
+  void init(int total_particles, int inlet_particles) {
     h_pos_x = host_vector<float>(total_particles, 0);
     h_pos_y = host_vector<float>(total_particles, 0);
     h_pos_z = host_vector<float>(total_particles, 0);
@@ -110,8 +109,18 @@ struct particle_gpu_h_d {
 
     total_spots = total_particles;
     copy_host_to_device();
-    set_raw_device_pointers(inlet_cells, mppc);
+    set_raw_device_pointers(inlet_particles);
   }
+
+  particle_gpu_h_d(int total_particles, int inlet_particles) {
+    init(total_particles, inlet_particles);
+  }
+
+  particle_gpu_h_d(int total_cells, int inlet_cells, int mppc) {
+    int total_particles = total_cells*mppc*5/4 + inlet_cells*mppc;
+    init(total_particles, inlet_cells*mppc);
+  }
+
   
   particle_gpu_h_d(vector<particle> &in_particles) {
     num_valid_particles = in_particles.size(); 
