@@ -237,9 +237,10 @@ struct particle_gpu_h_d {
     copy_device_vector_to_host();
     if( start_index < 0) start_index = 0;
     for(int i=0; i<offset*4; i+=offset) {
-      if(i + 5 >= total_spots) {printf("   (End of valid values)\n"); break;}
+      if(start_index + i >= total_spots) {printf("   (Array ends at %d )\n", total_spots); break;}
       for(int j=0; j<6; ++j) {
         int idx = start_index + i + j;
+        if(idx >= total_spots){break;}
         printf("%4d:", idx);
         if(h_type[idx] != -1)
           printf("(%1.5f,%1.5f,%1.5f)", h_pos_x[idx], h_pos_y[idx], h_pos_z[idx]);
@@ -250,7 +251,8 @@ struct particle_gpu_h_d {
       if(0b0001 & version){ 
         printf("\n  Vel:");
         for(int j=0; j<6; ++j) {
-        int idx = start_index + i + j;
+          int idx = start_index + i + j;
+          if(idx >= total_spots){break;}
           printf("   ");
           if(h_type[idx] != -1)
             printf("(%1.5f,%1.5f,%1.5f)", h_vel_x[idx], h_vel_y[idx], h_vel_z[idx]);
@@ -262,7 +264,8 @@ struct particle_gpu_h_d {
       if(0b0010 & version){ 
         printf("\n  Index:");
         for(int j=0; j<6; ++j) {
-        int idx = start_index + i + j;
+          int idx = start_index + i + j;
+          if(idx >= total_spots){break;}
           printf("   ");
           if(h_type[idx] != -1)
             printf("         %06d           ", h_index[idx]);
@@ -274,7 +277,8 @@ struct particle_gpu_h_d {
       if(0b0100 & version){ 
         printf("\n   Type:");
         for(int j=0; j<6; ++j) {
-        int idx = start_index + i + j;
+          int idx = start_index + i + j;
+          if(idx >= total_spots){break;}
           printf("   ");
           if(h_type[idx] != -1)
             printf("         %06d           ", h_type[idx]);
@@ -351,20 +355,22 @@ struct particle_count_map {
 
     printf("Particle Counts: (Idx:Count)\n");
     for(int i=0; i<4; ++i) {
-      if(i*11 >= num_occupied_cells) {printf("   (End of valid values)\n"); break;}
+      if(i*10 >= num_occupied_cells) {printf("   (End of valid values)\n"); break;}
       printf("   ");
       for(int j=0; j<10; ++j) {
         int idx = i*10 + j;
+        if(idx >= num_occupied_cells) {break;}
         printf("%5d:%-5d |",h_idxs[idx],h_counts[idx]);
       }
       printf("\n");
     }
     printf("Particle Offsets: (Idx:Offset)\n");
     for(int i=0; i<4; ++i) {
-      if(i*11 >= num_occupied_cells) {printf("   (End of valid values)\n"); break;}
+      if(i*10 >= num_occupied_cells) {printf("   (End of valid values)\n"); break;}
       printf("   ");
       for(int j=0; j<10; ++j) {
-        int idx = i + j;
+        int idx = i*10 + j;
+        if(idx >= num_occupied_cells) {break;}
         printf("%5d:%-5d |",h_idxs[idx],h_offsets[idx]);
       }
       printf("\n");
@@ -545,13 +551,14 @@ struct collisionInfo_gpu {
   void print_sample(){
     copy_device_to_host();
     printf("idx: maxCollisionRate(*10^27),collisionRemainder\n");
-    for(int i=0; i<300; i+=50 ) {
-      if(i + 5 >= num_cells) {printf("   (End of valid values)\n"); return;}
+    for(int i=0; i<30; i+=6 ) {
       for(int j=0; j<6; ++j) {
         int idx = i + j;
+        if(idx >= num_cells){break;}
         printf("%4d: %1.5f,%1.5f |",idx,h_maxCollisionRate[idx]*1e27,h_collisionRemainder[idx]);
       }
       printf("\n");
+      if(i + 5 >= num_cells) {printf("   (End of valid values)\n"); return;}
     }
     printf("\n");
   }
