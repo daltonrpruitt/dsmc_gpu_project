@@ -20,6 +20,7 @@
 #include <curand_kernel.h>
 
 #define DEBUG
+#define DUMP_AFTER_INIT
 
 // Physical constant describing atom collision size
 const float sigmak = 1e-28 ; // collision cross section
@@ -553,8 +554,12 @@ int main(int ac, char *av[]) {
 #ifdef DEBUG
     printf("After initializeBoundaries_gpu...\n");
     particles.print_size();
+#ifdef DUMP_AFTER_INIT
+    particles.dump();
+#else
     particles.print_sample(1);    
     particles.print_sample(4, particles.num_valid_particles-12, 6);
+#endif
 #endif
 
     int blocks = particles.num_valid_particles / thrds_per_block + 1;

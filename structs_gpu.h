@@ -281,6 +281,13 @@ struct particle_gpu_h_d {
     }
     printf("\n");
   }
+
+  void dump() {
+    printf("Dumping all particles:\n");
+    for(int i=0; i<total_spots; i+=6*4) {
+      print_sample(1+2+4,i,6);
+    }
+  }
 } ;
 
 struct particle_count_map_gpu_raw {
