@@ -191,9 +191,7 @@ struct particle_gpu_h_d {
         d_index.begin()
     ));
     thrust::sort_by_key(d_type.begin(), d_type.end(), particles_iterator_tuple, thrust::greater<int>());
-    int num_invalid_particles_ = thrust::count(d_type.begin(),d_type.end(), -1);
-    num_valid_particles = d_type.size() - num_invalid_particles_;
-    raw_pointers.num_valid_particles = num_valid_particles;
+    calc_num_valid_particles();
   }
 
   void sort_valid_particles_by_index() {
@@ -204,7 +202,14 @@ struct particle_gpu_h_d {
         d_vel_x.begin(), d_vel_y.begin(), d_vel_z.begin(),
         d_type.begin()
     ));
+    calc_num_valid_particles();
     thrust::sort_by_key(d_index.begin(), d_index.begin()+num_valid_particles, particles_iterator_tuple);
+  }
+
+  void calc_num_valid_particles() {
+    int num_invalid_particles_ = thrust::count(d_type.begin(),d_type.end(), -1);
+    num_valid_particles = d_type.size() - num_invalid_particles_;
+    raw_pointers.num_valid_particles = num_valid_particles;
   }
 
   vector<particle> get_valid_particles() {
@@ -213,7 +218,7 @@ struct particle_gpu_h_d {
   }
 
   void print_size() {
-    sort_particles_by_validity();
+    calc_num_valid_particles();
     printf("Size of particles: ");
     printf(" particles=%d ; spots total=%zu \n", num_valid_particles, h_type.size());
   }
