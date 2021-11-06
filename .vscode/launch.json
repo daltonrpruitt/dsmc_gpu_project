@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Make dsmc_gpu",
+            "preLaunchTask": "",
             "miDebuggerPath": "/usr/bin/gdb"
         },
         {
