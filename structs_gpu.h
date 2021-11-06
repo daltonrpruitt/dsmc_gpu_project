@@ -385,16 +385,18 @@ struct particle_count_map {
   device_vector<int> particle_offsets;
 
   particle_count_map_gpu_raw raw_pointers;
+  int num_cells = -1;
   int num_occupied_cells = -1;
 
-  particle_count_map(int num_cells) {
+  particle_count_map(int num_cells_) {
+    num_cells = num_cells_;
     cell_idxs = device_vector<float>(num_cells, 0);
-    particle_counts = device_vector<float>(num_cells, 0);
+    particle_counts = device_vector<float>(num_cells, -1);
     particle_offsets = device_vector<float>(num_cells, 0);
   }
 
 
-  void map_particles_to_cells(particle_gpu_h_d particles) {
+  int map_particles_to_cells(particle_gpu_h_d particles) {
     particles.sort_valid_particles_by_index(); // this is necessary since reduce_by_key() only reduces contiguously
 
     thrust::pair<IntIter, IntIter> map_ends;
@@ -405,7 +407,15 @@ struct particle_count_map {
     
     thrust::exclusive_scan(particle_counts.begin(), map_ends.second, particle_offsets.begin()); 
     num_occupied_cells = map_ends.first - cell_idxs.begin()-1;
+    if(num_occupied_cells > num_cells) {
+      printf("Error: occupied_cells is larger than actual cells in simulation! (%d > %d)\n", num_occupied_cells, num_cells);
+      printf("Dumping values:\n");
+      particles.dump();
+      print_sample(true);
+      return -1;
+    }
     set_raw_pointers();
+    return 0;
   }
    
   void set_raw_pointers() {

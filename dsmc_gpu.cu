@@ -635,7 +635,9 @@ int main(int ac, char *av[]) {
 #endif
 
     particle_count_map mapping(ni*nj*nk);
-    mapping.map_particles_to_cells(particles);
+    if(mapping.map_particles_to_cells(particles)) {
+      return -1;
+    }
 #ifdef DEBUG
     printf("After sort by index...\n"); // inside map()
     particles.print_sample(2);
