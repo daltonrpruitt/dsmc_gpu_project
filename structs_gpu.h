@@ -105,7 +105,7 @@ struct particle_gpu_h_d {
     h_vel_z = host_vector<float>(total_particles, 0);
    
     h_type = host_vector<int>(total_particles, -1);
-    h_index = host_vector<int>(total_particles, 0);
+    h_index = host_vector<int>(total_particles, -1);
 
     total_spots = total_particles;
     copy_host_to_device();
@@ -175,30 +175,57 @@ struct particle_gpu_h_d {
 
     copy_device_vector_to_host();
 
-    host_vector<float> n_h_pos_x, n_h_pos_y, n_h_pos_z;
-    host_vector<float> n_h_vel_x, n_h_vel_y, n_h_vel_z;
-    host_vector<int> n_h_type ;
-    host_vector<int> n_h_index ;
+    // host_vector<float> n_h_pos_x, n_h_pos_y, n_h_pos_z;
+    // host_vector<float> n_h_vel_x, n_h_vel_y, n_h_vel_z;
+    // host_vector<int> n_h_type ;
+    // host_vector<int> n_h_index ;
 
-    n_h_pos_x = host_vector<float>(new_total_particles, 0);
-    n_h_pos_y = host_vector<float>(new_total_particles, 0);
-    n_h_pos_z = host_vector<float>(new_total_particles, 0);
+    h_pos_x.resize(new_total_particles);
+    h_pos_y.resize(new_total_particles);
+    h_pos_z.resize(new_total_particles);
+    h_vel_x.resize(new_total_particles);
+    h_vel_y.resize(new_total_particles);
+    h_vel_z.resize(new_total_particles);
+    h_type.resize(new_total_particles);
+    h_index.resize(new_total_particles);
+
+    thrust::fill(h_pos_x.begin()+total_spots, h_pos_x.end(), 0);
+    thrust::fill(h_pos_y.begin()+total_spots, h_pos_y.end(), 0);
+    thrust::fill(h_pos_z.begin()+total_spots, h_pos_z.end(), 0);
+    thrust::fill(h_vel_x.begin()+total_spots, h_vel_x.end(), 0);
+    thrust::fill(h_vel_y.begin()+total_spots, h_vel_y.end(), 0);
+    thrust::fill(h_vel_z.begin()+total_spots, h_vel_z.end(), 0);
+    thrust::fill( h_type.begin()+total_spots,  h_type.end(),-1);
+    thrust::fill(h_index.begin()+total_spots, h_index.end(), -1);
+
+    // n_h_pos_x = host_vector<float>(new_total_particles, 0);
+    // n_h_pos_y = host_vector<float>(new_total_particles, 0);
+    // n_h_pos_z = host_vector<float>(new_total_particles, 0);
     
-    n_h_vel_x = host_vector<float>(new_total_particles, 0);
-    n_h_vel_y = host_vector<float>(new_total_particles, 0);
-    n_h_vel_z = host_vector<float>(new_total_particles, 0);
+    // n_h_vel_x = host_vector<float>(new_total_particles, 0);
+    // n_h_vel_y = host_vector<float>(new_total_particles, 0);
+    // n_h_vel_z = host_vector<float>(new_total_particles, 0);
    
-    n_h_type = host_vector<int>(new_total_particles, -1);
-    n_h_index = host_vector<int>(new_total_particles, 0);
+    // n_h_type = host_vector<int>(new_total_particles, -1);
+    // n_h_index = host_vector<int>(new_total_particles, 0);
 
-    thrust::copy(h_pos_x.begin(), h_pos_x.end(), n_h_pos_x.begin());
-    thrust::copy(h_pos_y.begin(), h_pos_y.end(), n_h_pos_y.begin());
-    thrust::copy(h_pos_z.begin(), h_pos_z.end(), n_h_pos_z.begin());
-    thrust::copy(h_vel_x.begin(), h_vel_x.end(), n_h_vel_x.begin());
-    thrust::copy(h_vel_y.begin(), h_vel_y.end(), n_h_vel_y.begin());
-    thrust::copy(h_vel_z.begin(), h_vel_z.end(), n_h_vel_z.begin());
-    thrust::copy( h_type.begin(),  h_type.end(),  n_h_type.begin());
-    thrust::copy(h_index.begin(), h_index.end(), n_h_index.begin());
+    // thrust::copy(h_pos_x.begin(), h_pos_x.end(), n_h_pos_x.begin());
+    // thrust::copy(h_pos_y.begin(), h_pos_y.end(), n_h_pos_y.begin());
+    // thrust::copy(h_pos_z.begin(), h_pos_z.end(), n_h_pos_z.begin());
+    // thrust::copy(h_vel_x.begin(), h_vel_x.end(), n_h_vel_x.begin());
+    // thrust::copy(h_vel_y.begin(), h_vel_y.end(), n_h_vel_y.begin());
+    // thrust::copy(h_vel_z.begin(), h_vel_z.end(), n_h_vel_z.begin());
+    // thrust::copy( h_type.begin(),  h_type.end(),  n_h_type.begin());
+    // thrust::copy(h_index.begin(), h_index.end(), n_h_index.begin());
+
+    // h_pos_x = n_h_pos_x;
+    // h_pos_y = n_h_pos_y;
+    // h_pos_z = n_h_pos_z;
+    // h_vel_x = n_h_vel_x;
+    // h_vel_y = n_h_vel_y;
+    // h_vel_z = n_h_vel_z;
+    // h_type  = n_h_type ;
+    // h_index = n_h_index;
 
     total_spots = new_total_particles;
     copy_host_to_device();
