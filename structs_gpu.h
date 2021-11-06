@@ -403,8 +403,8 @@ struct particle_count_map {
       particles.d_index.begin(), particles.d_index.end(), thrust::make_constant_iterator(1),
       cell_idxs.begin(), particle_counts.begin());
     
-    thrust::exclusive_scan(particle_counts.begin(), particle_counts.end(), particle_offsets.begin()); 
-    num_occupied_cells = map_ends.first - cell_idxs.begin();
+    thrust::exclusive_scan(particle_counts.begin(), map_ends.second, particle_offsets.begin()); 
+    num_occupied_cells = map_ends.first - cell_idxs.begin()-1;
     set_raw_pointers();
   }
    
