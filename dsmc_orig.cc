@@ -402,6 +402,16 @@ int main(int ac, char *av[]) {
   for(int n=0;n<ntimesteps;++n) {
     // Add particles at inflow boundaries
     initializeBoundaries(particleList,ni,nj,nk,vmean,vtemp,mppc) ;
+#if 0
+    list<particle>::iterator ii = particleList.begin(); 
+    for(int i=0; i < 50; ++i) {
+      printf("%.5f,%.5f,%.5f |  ",ii->vel.x,ii->vel.y,ii->vel.z);
+      if(i%6==5) printf("\n");
+      ii++;
+    }
+
+    exit(0);
+#endif
     // Move particles
     moveParticlesWithBCs(particleList,deltaT) ;
     // Remove any particles that are now outside of boundaries
