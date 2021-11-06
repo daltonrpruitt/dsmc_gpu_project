@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/dsmc_gpu",
-            "args": [],
+            "args": ["-ni","2", "-nj", "2", "-nk", "2"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
