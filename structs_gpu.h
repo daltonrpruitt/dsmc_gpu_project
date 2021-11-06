@@ -419,31 +419,32 @@ struct particle_count_map {
     printf("Num of cells with particles = %d\n", num_occupied_cells);
   }
 
-  void print_sample() {
+  void print_sample(bool dump=false) {
     host_vector<int> h_idxs(cell_idxs.size()), h_counts(particle_counts.size()), 
                      h_offsets(particle_offsets.size());
     thrust::copy(cell_idxs.begin(), cell_idxs.end(), h_idxs.begin());
     thrust::copy(particle_counts.begin(), particle_counts.end(), h_counts.begin());
     thrust::copy(particle_offsets.begin(), particle_offsets.end(), h_offsets.begin());
 
+    int limit = dump ? num_cells : 40; 
     printf("Particle Counts: (Idx:Count)\n");
-    for(int i=0; i<4; ++i) {
-      if(i*10 >= num_occupied_cells) {printf("   (End of valid values)\n"); break;}
+    for(int i=0; i<limit; i+=10) {
+      if(i >= num_cells) {printf("   (End of valid values)\n"); break;}
       printf("   ");
       for(int j=0; j<10; ++j) {
-        int idx = i*10 + j;
-        if(idx >= num_occupied_cells) {break;}
+        int idx = i + j;
+        if(idx >= num_cells) {break;}
         printf("%5d:%-5d |",h_idxs[idx],h_counts[idx]);
       }
       printf("\n");
     }
     printf("Particle Offsets: (Idx:Offset)\n");
-    for(int i=0; i<4; ++i) {
-      if(i*10 >= num_occupied_cells) {printf("   (End of valid values)\n"); break;}
+    for(int i=0; i<limit; i+=10) {
+      if(i >= num_cells) {printf("   (End of valid values)\n"); break;}
       printf("   ");
       for(int j=0; j<10; ++j) {
-        int idx = i*10 + j;
-        if(idx >= num_occupied_cells) {break;}
+        int idx = i + j;
+        if(idx >= num_cells) {break;}
         printf("%5d:%-5d |",h_idxs[idx],h_offsets[idx]);
       }
       printf("\n");
