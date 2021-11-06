@@ -669,6 +669,7 @@ int main(int ac, char *av[]) {
     // particles = particleVec;
   }
 
+  printf("Finished\n");
   particleVec = particles.to_vector() ;
   
   // Write out final particle data
