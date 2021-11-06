@@ -135,7 +135,7 @@ void initializeBoundaries_gpu(
     particles.vz[idx*mppc + m] = vel.z * speed;
 
     particles.type[idx*mppc + m] = 0;
-    particles.index[idx*mppc + m] = 0;
+    particles.index[idx*mppc + m] = -1;
   }
   // write local state back to global
   rand4[idx] = local_rand4;
@@ -199,6 +199,7 @@ void removeOutsideParticles_gpu(particle_gpu_raw particles) {
   if(idx >= particles.num_valid_particles) return;
     if(particles.px[idx] < -1.0 || particles.px[idx] > 1.0) { // Outside domain so remove
       particles.type[idx] = -1 ;
+      particles.index[idx] = -1 ;
     }
 }
 
