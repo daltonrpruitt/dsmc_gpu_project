@@ -676,7 +676,7 @@ int main(int ac, char *av[]) {
   ofstream ofile("particles.dat",ios::out) ;
   
   for(particle p : particleVec) {
-    ofile << p.pos.x << ' ' << p.pos.y << ' ' <<  p.pos.z << ' ' <<  p.type <<  p.index << endl ;
+    ofile << p.pos.x << ' ' << p.pos.y << ' ' <<  p.pos.z << ' ' <<  p.type << ' ' << p.index << endl ;
   }
 
   ofile.close() ;
