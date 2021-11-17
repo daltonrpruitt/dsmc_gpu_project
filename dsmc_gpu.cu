@@ -168,7 +168,7 @@ void moveParticlesWithBCs_gpu(particle_gpu_raw particles, float deltaT, Plate pl
           npos.x = npos.x - 2*(npos.x-plate.x) ; 
           // why 2 and not some function of t? b/c is calculating new npos, not pos,
           //   so has to get back to plate, then keeps moving the same amount in new new direction
-          vel.x = -vel.x ; // Velocity just reflects along x direction
+          particles.vx[idx] = -vel.x ; // Velocity just reflects along x direction
           particles.type[idx] = 2 ;
     }
   }
