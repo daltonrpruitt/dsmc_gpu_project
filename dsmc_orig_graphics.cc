@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "vect3d.h"
 #include "structs.h"
+using namespace std ;
 
 // Physical constant describing atom collision size
 const float sigmak = 1e-28 ; // collision cross section
