@@ -297,6 +297,41 @@ void initializeCollision(vector<collisionInfo> &collisionData,
   }
 }
 
+void takeStep(
+              // list<particle> &particleList, 
+              // vector<cellSample> &cellData,
+              // vector<collisionInfo> &collisionData,
+              // float deltaT
+              ) {
+    // Add particles at inflow boundaries
+    initializeBoundaries(particleList,ni,nj,nk,vmean,vtemp,mppc) ;
+
+
+    // Move particles
+    moveParticlesWithBCs(particleList,deltaT) ;
+    // Remove any particles that are now outside of boundaries
+    removeOutsideParticles(particleList) ;
+    // Compute cell index for particles based on their current
+    // locations
+    indexParticles(particleList,ni,nj,nk) ;
+    // If time to reset cell samples, reinitialize data
+    if(n%sample_reset == 0 ) {
+      initializeSample(cellData) ;
+      nsample = 0 ;
+    }
+    // Sample particle information to cells
+    nsample++ ;
+    sampleParticles(cellData,particleList) ;
+    // Compute particle collisions
+    collideParticles(particleList,collisionData,cellData,nsample,
+                     cellvol,deltaT) ;
+    // print out progress
+    if((n&0xf) == 0) {
+      cout << n << ' ' << particleList.size() << endl ;
+    }
+
+    n++;
+}
 
 /*****************************************************************************
  **
@@ -423,20 +458,11 @@ int main(int ac, char *av[]) {
   // Begin simulation.  Initialize collision data
   initializeCollision(collisionData,vtemp) ;
 
+#if 0
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
     // Add particles at inflow boundaries
     initializeBoundaries(particleList,ni,nj,nk,vmean,vtemp,mppc) ;
-#if 0
-    list<particle>::iterator ii = particleList.begin(); 
-    for(int i=0; i < 50; ++i) {
-      printf("%.5f,%.5f,%.5f |  ",ii->vel.x,ii->vel.y,ii->vel.z);
-      if(i%6==5) printf("\n");
-      ii++;
-    }
-
-    exit(0);
-#endif
     // Move particles
     moveParticlesWithBCs(particleList,deltaT) ;
     // Remove any particles that are now outside of boundaries
@@ -459,6 +485,8 @@ int main(int ac, char *av[]) {
     if((n&0xf) == 0) {
       cout << n << ' ' << particleList.size() << endl ;
     }
+#endif 
+  
   }
 
   // Write out final particle data
