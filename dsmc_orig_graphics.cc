@@ -331,6 +331,7 @@ void takeStep(
     }
 
     n++;
+    if(n >= ntimesteps) save_output_data();
 }
 
 /*****************************************************************************
@@ -487,8 +488,9 @@ int main(int ac, char *av[]) {
     }
 #endif 
   
-  }
+}
 
+void save_output_data(){
   // Write out final particle data
   ofstream ofile("particles.dat",ios::out) ;
   list<particle>::iterator ii ;
@@ -510,5 +512,6 @@ int main(int ac, char *av[]) {
            << cellData[i].energy << endl ;
   ocfile.close() ;
 
-  return 0 ;
+}
+
 }
