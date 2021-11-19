@@ -18,7 +18,27 @@ float plate_x = -0.25 ;
 float plate_dy = 0.25 ;
 float plate_dz = .5 ;
 
-using namespace std ;
+
+uint ni=32,nj=32,nk=32 ;
+// mean velocity and temperature of flow
+float Mach = 20 ;
+float vmean=1 ;
+// mean particles per cell
+int mppc = 10 ;
+float density = 1e30 ; // Number of molecules per unit cube of space
+float sim_time = -1 ;
+
+double cellvol;
+float vtemp;
+int sample_reset = 0 ;
+int nsample = 0 ;
+int n = 0;
+int ntimesteps = 0;
+
+list<particle> particleList;
+vector<cellSample> cellData;
+vector<collisionInfo> collisionData;
+float deltaT;
 
 // Driver for the random number function
 inline double ranf() {
@@ -326,6 +346,7 @@ void initializeCollision(vector<collisionInfo> &collisionData,
 int main(int ac, char *av[]) {
   long seed = 1 ;
   srand48(seed) ;
+#if 0
   int ni=32,nj=32,nk=32 ;
   // mean velocity and temperature of flow
   float Mach = 20 ;
@@ -334,6 +355,8 @@ int main(int ac, char *av[]) {
   int mppc = 10 ;
   float density = 1e30 ; // Number of molecules per unit cube of space
   float time = -1 ;
+#endif
+
   // Parse command line options
   int i=1;
   while(i<ac && av[i][0] == '-') {
@@ -361,39 +384,41 @@ int main(int ac, char *av[]) {
     if(opt == "-platedz")
       plate_dz = atof(av[++i]) ;
     if(opt == "-time") 
-      time = atof(av[++i]) ;
+      sim_time = atof(av[++i]) ;
     ++i ;
   }
 
-  float vtemp= vmean/Mach ;
+  vtemp= vmean/Mach ;
   float dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  double cellvol = dx*dy*dz ;
+  cellvol = dx*dy*dz ;
 
   // Compute number of molecules a particle represents
   pnum = density*cellvol/float(mppc) ;
 
   // Create simulation data structures 
-  list<particle> particleList ;
-  vector<cellSample> cellData(ni*nj*nk) ;
-  vector<collisionInfo> collisionData(ni*nj*nk) ;
+  // list<particle> particleList ;
+  // vector<cellSample> 
+  cellData.resize(ni*nj*nk) ;
+  // vector<collisionInfo> 
+  collisionData.resize(ni*nj*nk) ;
 
   // Compute reasonable timestep
   float deltax = 2./float(max(max(ni,nj),nk)) ;
-  float deltaT = .1*deltax/(vmean+vtemp) ;
+  deltaT = .1*deltax/(vmean+vtemp) ;
 
   // If time duration not given, simulate for 4 free-stream flow-through times 
-  if(time < 0)
-    time = 8./(vmean+vtemp) ;
+  if(sim_time < 0)
+    sim_time = 8./(vmean+vtemp) ;
 
   // Compute nearest power of 2 timesteps
-  float tsteps = time/deltaT ;
+  float tsteps = sim_time/deltaT ;
   int ln2steps = int(ceil(log(tsteps)/log(2.0))) ;
-  int ntimesteps = 1<<ln2steps ;
-  cout << "time = " << time << ' ' << ", nsteps = " << ntimesteps << endl ;
-  int nsample = 0 ;
+  ntimesteps = 1<<ln2steps ;
+  cout << "time = " << sim_time << ' ' << ", nsteps = " << ntimesteps << endl ;
+  // int nsample = 0 ;
 
   // re-sample 4 times during simulation
-  const int sample_reset = ntimesteps/4 ;
+  sample_reset = ntimesteps/4 ;
 
   // Begin simulation.  Initialize collision data
   initializeCollision(collisionData,vtemp) ;
