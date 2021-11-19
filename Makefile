@@ -42,5 +42,5 @@ dsmc_orig_graphics: 	dsmc_orig_graphics.cc
 
 
 clean:
-
+	rm -f dsmc_gpu dsmc_orig dsmc_orig_graphics dsmc_gpu_graphics
 
