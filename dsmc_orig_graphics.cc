@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include "vect3d.h"
 #include "structs.h"
+#include <vector_types.h>
+
+#include "helper_gl.h"
+#include <GL/freeglut.h>
+
 using namespace std ;
 
 // Physical constant describing atom collision size
@@ -40,6 +45,48 @@ list<particle> particleList;
 vector<cellSample> cellData;
 vector<collisionInfo> collisionData;
 float deltaT;
+
+
+#define MAX_EPSILON_ERROR 10.0f
+#define THRESHOLD          0.30f
+#define REFRESH_DELAY     10 //ms
+
+////////////////////////////////////////////////////////////////////////////////
+// constants
+const unsigned int window_width  = 512;
+const unsigned int window_height = 512;
+
+// animation 
+float g_fAnim = 0.0;
+
+// mouse controls
+int mouse_old_x, mouse_old_y;
+int mouse_buttons = 0;
+float rotate_x = 0.0, rotate_y = 0.0;
+float translate_z = -3.0;
+bool pause = false;
+
+
+GLuint edges_buffer;
+GLuint particles_buffer;
+uint num_edges;
+uint num_particles;
+
+////////////////////////////////////////////////////////////////////////////////
+// declaration, forward
+void cleanup();
+
+// GL functionality
+bool initGL(int *argc, char **argv);
+
+// rendering callbacks
+void display();
+void keyboard(unsigned char key, int x, int y);
+void mouse(int button, int state, int x, int y);
+void motion(int x, int y);
+void timerEvent(int value);
+
+void save_output_data();
 
 // Driver for the random number function
 inline double ranf() {
@@ -460,6 +507,15 @@ int main(int ac, char *av[]) {
   // Begin simulation.  Initialize collision data
   initializeCollision(collisionData,vtemp) ;
 
+#if defined(__linux__)
+    setenv ("DISPLAY", ":0", 0);
+#endif
+
+  initGL(&ac, av);
+  glutCloseFunc(cleanup);
+  glutMainLoop();
+
+
 #if 0
   // Step forward in time
   for(int n=0;n<ntimesteps;++n) {
@@ -515,4 +571,257 @@ void save_output_data(){
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//! Initialize GL
+////////////////////////////////////////////////////////////////////////////////
+bool initGL(int *argc, char **argv)
+{
+    glutInit(argc, argv);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+    glutInitWindowSize(window_width, window_height);
+    glutCreateWindow("Cuda GL Interop (VBO)");
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboard);
+    glutMouseFunc(mouse);
+    glutMotionFunc(motion);
+    glutTimerFunc(REFRESH_DELAY, timerEvent,0);
+
+    // initialize necessary OpenGL extensions
+    if (! isGLVersionSupported(2,0))
+    {
+        fprintf(stderr, "ERROR: Support for necessary OpenGL extensions missing.");
+        fflush(stderr);
+        return false;
+    }
+    printf("openGL version = %s\n", glGetString(GL_VERSION));
+
+
+    // default initialization
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glDisable(GL_DEPTH_TEST);
+    
+    // viewport
+    glViewport(0, 0, window_width, window_height);
+
+    // projection
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60.0, (GLfloat)window_width / (GLfloat) window_height, 0.1, 20.0);
+
+
+    float cell_size = 2.0;
+    // uint num_cells_on_edge = 4;
+    // uint ni=num_cells_on_edge , nj=num_cells_on_edge , nk=num_cells_on_edge ;
+    std::vector<float3> cells_edges_positions_data;
+
+    float dx = cell_size/ni, dy = cell_size/nj, dz = cell_size/nk;
+    float x, y, z;
+    // Front, back (front = -1, back = 1)
+    float backx = cell_size/2.0, frontx = -backx;
+    for(uint j=0; j<nj+1; ++j) {
+        y = -cell_size/2.0 + dy*j;
+        for(uint k=0; k<nk+1; ++k) {
+            z = -cell_size/2.0 + dz*k;
+            cells_edges_positions_data.push_back({frontx,y,z});
+            cells_edges_positions_data.push_back({backx,y,z});
+        }
+    }
+
+    // Bottom, top (bottom = -1, top = 1)
+    float topy = cell_size/2.0, bottomy = -topy;
+    for(uint i=0; i<ni+1; ++i) {
+        x = -cell_size/2.0 + dx*i;
+        for(uint k=0; k<nk+1; ++k) {
+            z = -cell_size/2.0 + dz*k;
+            cells_edges_positions_data.push_back({x,bottomy,z});
+            cells_edges_positions_data.push_back({x,topy,z});
+        }
+    }
+    
+    // Left, right (left = -1, right = 1)
+    float rightz = cell_size/2.0, leftz = -rightz;
+    for(uint i=0; i<ni+1; ++i) {
+        x = -cell_size/2.0 + dx*i;
+        for(uint j=0; j<nj+1; ++j) {
+            y = -cell_size/2.0 + dy*j;
+            cells_edges_positions_data.push_back({x,y,leftz});
+            cells_edges_positions_data.push_back({x,y,rightz});
+        }
+    }
+
+    num_edges  = (ni+1)*(nj+1) + (ni+1)*(nk+1) + (nj+1)*(nk+1);
+    // printf("Number of edges = %u\n", num_edges);
+
+#if 0
+    for(uint i=0; i < num_edges; i+=num_edges/12){
+        std::cout << 
+        cells_edges_positions_data[i*2].x <<" "<< 
+        cells_edges_positions_data[i*2].y <<" "<< 
+        cells_edges_positions_data[i*2].z << 
+        " | "<< 
+        cells_edges_positions_data[i*2+1].x <<" "<< 
+        cells_edges_positions_data[i*2+1].y <<" "<< 
+        cells_edges_positions_data[i*2+1].z << 
+        std::endl;
+    }
+#endif
+
+    glGenBuffers(1, &edges_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, edges_buffer);
+    glBufferData(GL_ARRAY_BUFFER, num_edges*2*sizeof(float3), cells_edges_positions_data.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    glGenBuffers(1, &particles_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, particles_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    return true;
+}
+
+void copy_particles_to_buffer() {
+    vector<float3> particles_pos_vec;
+    list<particle>::iterator ii; 
+    
+    // This is more than likely quite slow....
+    // std::vector<float3> particles_pos; 
+    for(ii = particleList.begin(); ii != particleList.end(); ii++) {
+        vect3d pos = ii->pos;
+        particles_pos_vec.push_back({pos.x, pos.y, pos.z});
+    }
+    num_particles = particles_pos_vec.size();
+    glBindBuffer(GL_ARRAY_BUFFER, particles_buffer);
+    glBufferData(GL_ARRAY_BUFFER, num_particles*sizeof(float3), particles_pos_vec.data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//! Display callback
+////////////////////////////////////////////////////////////////////////////////
+void display(){
+    
+    // timestep here?
+    if( (n<ntimesteps) & !pause)
+      takeStep();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // set view matrix
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(0.0, 0.0, translate_z);
+    glRotatef(rotate_x, 0.5, 0.0, 0.0);
+    glRotatef(rotate_y, 0.0, 1.0, 0.0);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    // glGenBuffers(1, &particles_buffer);
+    copy_particles_to_buffer();
+    glBindBuffer(GL_ARRAY_BUFFER, particles_buffer);
+    glVertexPointer(3, GL_FLOAT, 0, (GLuint*) 0);
+
+    
+    glDrawArrays(GL_POINTS, 0, num_particles);
+
+#if 0
+    // Cube edges?
+    // glEnableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, edges_buffer);
+    glVertexPointer(3, GL_FLOAT, 0, (GLuint*) 0);
+
+    glDrawArrays(GL_LINES, 0, num_edges*2);
+#endif 
+    glBegin(GL_LINE_LOOP);
+      glVertex3d(plate_x, -plate_dy, -plate_dz);
+      glVertex3d(plate_x, -plate_dy, plate_dz);
+      glVertex3d(plate_x, plate_dy, plate_dz);
+      glVertex3d(plate_x, plate_dy, -plate_dz);
+    glEnd();
+    // glBindBuffer(GL_ARRAY_BUFFER, particles_positions_buffer);
+
+
+    glutSwapBuffers();
+
+    g_fAnim += 0.01f;
+
+}
+
+void timerEvent(int value)
+{
+    if (glutGetWindow())
+    {
+        glutPostRedisplay();
+        glutTimerFunc(REFRESH_DELAY, timerEvent,0);
+    }
+}
+
+void cleanup()
+{
+    if (edges_buffer){
+        glBindBuffer(1, edges_buffer);
+        glDeleteBuffers(1, &edges_buffer);
+    }
+    if (particles_buffer){
+        glBindBuffer(1, particles_buffer);
+        glDeleteBuffers(1, &particles_buffer);
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+//! Keyboard events handler
+////////////////////////////////////////////////////////////////////////////////
+void keyboard(unsigned char key, int /*x*/, int /*y*/)
+{
+    switch (key)
+    {
+        case (27) : // ESC
+            #if defined(__APPLE__) || defined(MACOSX)
+                exit(EXIT_SUCCESS);
+            #else
+                glutDestroyWindow(glutGetWindow());
+                return;
+            #endif
+        case (32) : // space
+                pause = !pause;
+                return;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//! Mouse event handlers
+////////////////////////////////////////////////////////////////////////////////
+void mouse(int button, int state, int x, int y)
+{
+    if (state == GLUT_DOWN)
+    {
+        mouse_buttons |= 1<<button;
+    }
+    else if (state == GLUT_UP)
+    {
+        mouse_buttons = 0;
+    }
+
+    mouse_old_x = x;
+    mouse_old_y = y;
+}
+
+void motion(int x, int y)
+{
+    float dx, dy;
+    dx = (float)(x - mouse_old_x);
+    dy = (float)(y - mouse_old_y);
+
+    if (mouse_buttons & 1)
+    {
+        rotate_x += dy * 0.2f;
+        rotate_y += dx * 0.2f;
+    }
+    else if (mouse_buttons & 4)
+    {
+        translate_z += dy * 0.01f;
+    }
+
+    mouse_old_x = x;
+    mouse_old_y = y;
 }
