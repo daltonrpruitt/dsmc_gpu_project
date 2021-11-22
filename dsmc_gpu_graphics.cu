@@ -49,7 +49,12 @@ using thrust::host_vector;
 using thrust::device_vector;
 using thrust::raw_pointer_cast;
 
+#ifdef DEBUG
+uint ni=4, nj=4, nk=4 ;
+#else 
 uint ni=32,nj=32,nk=32 ;
+#endif
+
 // mean velocity and temperature of flow
 float Mach = 20 ;
 float vmean=1 ;
