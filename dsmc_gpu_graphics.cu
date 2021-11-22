@@ -642,8 +642,6 @@ int takeStep() {
   // Add particles at inflow boundaries
   initializeBoundaries_gpu<<<(nj*nk)/thrds_per_block+1, thrds_per_block>>>(
 									 particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
-                            particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
-									 particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
 									 rand4State_ptr, randState_5_ptr, randState_6_ptr) ;
   cudaDeviceSynchronize();
   cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
@@ -655,8 +653,6 @@ int takeStep() {
 #ifdef DUMP_AFTER_INIT
   particles.dump();
 #else
-  particles.print_sample(1);
-    particles.print_sample(1);    
   particles.print_sample(1);
   particles.print_sample(4, particles.num_valid_particles-12, 6);
 #endif
