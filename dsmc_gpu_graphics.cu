@@ -780,7 +780,7 @@ void save_output_data(){
   vector<particle> particleVec = particles_ptr->to_vector() ;
   
   // Write out final particle data
-  ofstream ofile("particles.dat",ios::out) ;
+  ofstream ofile("particles_gpu_graphics.dat",ios::out) ;
   
   for(particle p : particleVec) {
     ofile << p.pos.x << ' ' << p.pos.y << ' ' <<  p.pos.z << ' ' <<  p.type << ' ' << p.index << endl ;
@@ -791,7 +791,7 @@ void save_output_data(){
   cellData = cellData_gpu_ptr->to_vector();
 
   // Write out cell sampled data
-  ofstream ocfile("cells.dat", ios::out) ;
+  ofstream ocfile("cells_gpu_graphics.dat", ios::out) ;
 
   for(size_t i=0;i<cellData.size();++i)
     ocfile << cellData[i].nparticles << ' '
