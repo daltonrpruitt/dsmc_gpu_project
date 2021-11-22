@@ -714,7 +714,7 @@ int takeStep() {
 
   // If time to reset cell samples, reinitialize data
   if(n%sample_reset == 0 ) {
-    initializeSample_gpu<<<n(i*nj*nk)/thrds_per_block+1 ,thrds_per_block>>>(cellData_gpu.raw_pointers) ;
+    initializeSample_gpu<<<(ni*nj*nk)/thrds_per_block+1 ,thrds_per_block>>>(cellData_gpu.raw_pointers) ;
     nsample = 0 ;
     cudaDeviceSynchronize();
     cudaErrChk(cudaGetLastError(), "initializeSample_gpu", pass);
@@ -806,7 +806,6 @@ void save_output_data(){
            << cellData[i].energy << endl ;
   ocfile.close() ;
 
-  return 0 ;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
