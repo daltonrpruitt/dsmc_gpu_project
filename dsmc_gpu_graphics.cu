@@ -378,13 +378,13 @@ void collideParticles_gpu(particle_gpu_raw particles,
       // we have enough
       collisionData.collisionRemainder[cell_idx] += nselect ;
     } else {
-      float4 rand_results4 = curand_uniform4(&local_rand4);
-      float rand_result_5 = curand_uniform(&local_rand_5);
-      float rand_result_6 = curand_uniform(&local_rand_6);
-  
+
       // Select nselect particles for possible collision
       float cmax = collisionData.maxCollisionRate[cell_idx] ;
       for(int c=0;c<nselect;++c) {
+        float4 rand_results4 = curand_uniform4(&local_rand4);
+        float rand_result_5 = curand_uniform(&local_rand_5);
+        float rand_result_6 = curand_uniform(&local_rand_6);
         // select two points in the cell
         int pt1 = min(int(floor(rand_results4.x*n_instant)),int(n_instant)-1) ;
         int pt2 = min(int(floor(rand_results4.y*n_instant)),int(n_instant)-1) ;
