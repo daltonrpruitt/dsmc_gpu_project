@@ -45,6 +45,37 @@ using thrust::host_vector;
 using thrust::device_vector;
 using thrust::raw_pointer_cast;
 
+uint ni=32,nj=32,nk=32 ;
+// mean velocity and temperature of flow
+float Mach = 20 ;
+float vmean=1 ;
+// mean particles per cell
+int mppc = 10 ;
+float density = 1e30 ; // Number of molecules per unit cube of space
+float sim_time = -1 ;
+
+double cellvol;
+float vtemp;
+int sample_reset = 0 ;
+int nsample = 0 ;
+int n = 0;
+int ntimesteps = 0;
+float deltaT;
+
+int thrds_per_block = 128;
+
+//vector<particle> particleVec;
+particle_gpu_h_d *particles_ptr;
+vector<cellSample> cellData;
+cellSample_gpu *cellData_gpu_ptr;
+vector<collisionInfo> collisionData;
+collisionInfo_gpu *collisionData_gpu_ptr;
+
+curandStatePhilox4_32_10_t * rand4State_ptr;
+curandState * randState_5_ptr;
+curandState * randState_6_ptr;
+
+
 #define MAX_EPSILON_ERROR 10.0f
 #define THRESHOLD          0.30f
 #define REFRESH_DELAY     10 //ms
@@ -85,6 +116,8 @@ void catchKey(int key, int x, int y);
 void mouse(int button, int state, int x, int y);
 void motion(int x, int y);
 void timerEvent(int value);
+
+void save_output_data();
 
 void cudaErrChk(cudaError_t status, const string &msg, bool &pass)
 {
@@ -477,14 +510,15 @@ void initializeCollision_gpu(collisionInfo_gpu_raw collisionData,
 int main(int ac, char *av[]) {
   long seed = 1 ;
   srand48(seed) ;
-  int ni=32,nj=32,nk=32 ;
+  // int ni=32,nj=32,nk=32 ;
   // mean velocity and temperature of flow
-  float Mach = 20 ;
-  float vmean=1 ;
+  // float Mach = 20 ;
+  // float vmean=1 ;
   // mean particles per cell
-  int mppc = 10 ;
-  float density = 1e30 ; // Number of molecules per unit cube of space
-  float time = -1 ;
+  // int mppc = 10 ;
+  // float density = 1e30 ; // Number of molecules per unit cube of space
+  // float time = -1 ;
+
   // Parse command line options
   int i=1;
   while(i<ac && av[i][0] == '-') {
@@ -512,47 +546,46 @@ int main(int ac, char *av[]) {
     if(opt == "-platedz")
       plate.dz = atof(av[++i]) ;
     if(opt == "-time") 
-      time = atof(av[++i]) ;
+      sim_time = atof(av[++i]) ;
     ++i ;
   }
 
-  float vtemp= vmean/Mach ;
+  vtemp= vmean/Mach ;
   float dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  double cellvol = dx*dy*dz ;
+  cellvol = dx*dy*dz ;
 
   // Compute number of molecules a particle represents
   pnum = density*cellvol/float(mppc) ;
 
   // Create simulation data structures 
-  vector<particle> particleVec ;
-  particle_gpu_h_d particles(ni*nj*nk, nj*nk, mppc);
-
-  vector<cellSample> cellData(ni*nj*nk) ;
-  cellSample_gpu cellData_gpu(ni*nj*nk);
-
-
-  vector<collisionInfo> collisionData(ni*nj*nk) ;
-  collisionInfo_gpu collisionData_gpu(ni*nj*nk);
-
+  //ctor<particle> particleVec ;
+  particles_ptr = new particle_gpu_h_d(ni*nj*nk, nj*nk, mppc);
+  
+  cellData.resize(ni*nj*nk) ;
+  cellData_gpu_ptr = new cellSample_gpu(ni*nj*nk);
+   
+  collisionData.resize(ni*nj*nk) ;
+  collisionData_gpu_ptr = new collisionInfo_gpu(ni*nj*nk);
+  
   // Compute reasonable timestep
   float deltax = 2./float(max(max(ni,nj),nk)) ;
-  float deltaT = .1*deltax/(vmean+vtemp) ;
+  deltaT = .1*deltax/(vmean+vtemp) ;
 
   // If time duration not given, simulate for 4 free-stream flow-through times 
   // DWP: Free stream = the stream that is free from obstacles, i.e. ignoring plate?
-  if(time < 0)
-    time = 8./(vmean+vtemp) ;
+  if(sim_time < 0)
+    sim_time = 8./(vmean+vtemp) ;
 
   // Compute nearest power of 2 timesteps
-  float tsteps = time/deltaT ;
+  float tsteps = sim_time/deltaT ;
   int ln2steps = int(ceil(log(tsteps)/log(2.0))) ;
-  int ntimesteps = 1<<ln2steps ;
-  cout << "time = " << time << ' ' << ", nsteps = " << ntimesteps << endl ;
-  int nsample = 0 ;
+  ntimesteps = 1<<ln2steps ;
+  cout << "time = " << sim_time << ' ' << ", nsteps = " << ntimesteps << endl ;
+  //int nsample = 0 ;
 
   // re-sample 4 times during simulation
-  const int sample_reset = ntimesteps/4 ;
-  int thrds_per_block = 256;
+  sample_reset = ntimesteps/4 ;
+  // int thrds_per_block = 256;
 
   // curandGenerator_t generator;
   // curandStatus_t curandStatus = curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MTGP32); // Marsenne
@@ -564,31 +597,49 @@ int main(int ac, char *av[]) {
   device_vector<curandState> randState_6 = 
     device_vector<curandState>(num_cells);
   
-  curandStatePhilox4_32_10_t * rand4State_ptr = raw_pointer_cast(rand4State.data());
-  curandState * randState_5_ptr = raw_pointer_cast(randState_5.data());
-  curandState * randState_6_ptr = raw_pointer_cast(randState_6.data());
+  rand4State_ptr = raw_pointer_cast(rand4State.data());
+  randState_5_ptr = raw_pointer_cast(randState_5.data());
+  randState_6_ptr = raw_pointer_cast(randState_6.data());
   init_rands<<<num_cells/thrds_per_block + 1, thrds_per_block>>> (
     seed, rand4State_ptr, randState_5_ptr, randState_6_ptr, num_cells);
     
   // Begin simulation.  Initialize collision data
   // initializeCollision(collisionData,vtemp) ;
   initializeCollision_gpu<<<ni*nj*nk/thrds_per_block+1 ,thrds_per_block>>>(
-    collisionData_gpu.raw_pointers,sigmak,vtemp,randState_6_ptr) ;
+    collisionData_gpu_ptr->raw_pointers,sigmak,vtemp,randState_6_ptr) ;
 #ifdef DEBUG
-  printf("Collision data num_cells=%d\n",collisionData_gpu.num_cells);
-  collisionData_gpu.print_sample();
+  printf("Collision data num_cells=%d\n",collisionData_gpu_ptr->num_cells);
+  collisionData_gpu_ptr->print_sample();
 #endif
+
+  //bool pass = true;
+  
+#ifdef DEBUG
+  particles_ptr->print_size();
+#endif
+#if defined(__linux__)
+  setenv ("DISPLAY", ":0", 0);
+#endif
+
+  initGL(&ac, av);
+  glutCloseFunc(cleanup);
+  glutMainLoop();
+ 
+}
+
+  // Step forward in time
+  //  for(int n=0;n<ntimesteps;++n) {
+int takeStep() {
+
+  // Convenience objects by global reference
+  particle_gpu_h_d& particles = *particles_ptr;
+  cellSample_gpu& cellData_gpu = *cellData_gpu_ptr;
+  collisionInfo_gpu& collisionData_gpu = *collisionData_gpu_ptr;
 
   bool pass = true;
 
-#ifdef DEBUG
-  particles.print_size();
-#endif
-
-  // Step forward in time
-  for(int n=0;n<ntimesteps;++n) {
-    particles.resize_for_init_boundaries(nj*nk*mppc);
-    // Add particles at inflow boundaries
+  particles.resize_for_init_boundaries(nj*nk*mppc);
+  // Add particles at inflow boundaries
     initializeBoundaries_gpu<<<nj*nk/thrds_per_block+1, thrds_per_block>>>(
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
                             rand4State_ptr, randState_5_ptr, randState_6_ptr) ;
@@ -704,16 +755,19 @@ int main(int ac, char *av[]) {
       particles.print_sample(4);      
 #endif
 
-    // print out progress
-    if((n&0xf) == 0) {
-      cout << n << ' ' << particles.num_valid_particles << endl ;
-    }
-    // particles = particleVec;
+  // print out progress
+  if((n&0xf) == 0) {
+    cout << n << ' ' << particles.num_valid_particles << endl ;
   }
+
+  n++;
+  if(n >= ntimesteps) save_output_data();
+  return 0; 
+}
 
 void save_output_data(){
   printf("Finished\n");
-  particleVec = particles.to_vector() ;
+  vector<particle> particleVec = particles_ptr->to_vector() ;
   
   // Write out final particle data
   ofstream ofile("particles.dat",ios::out) ;
@@ -724,7 +778,7 @@ void save_output_data(){
 
   ofile.close() ;
   
-  cellData = cellData_gpu.to_vector();
+  cellData = cellData_gpu_ptr->to_vector();
 
   // Write out cell sampled data
   ofstream ocfile("cells.dat", ios::out) ;
