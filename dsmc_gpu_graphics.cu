@@ -22,6 +22,10 @@
 #include "helper_gl.h"
 #include <GL/freeglut.h>
 
+#include <chrono>
+#include <thread>
+
+
 // #define DEBUG
 // #define DUMP_AFTER_INIT
 // Physical constant describing atom collision size
