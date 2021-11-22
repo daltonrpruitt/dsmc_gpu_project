@@ -640,119 +640,129 @@ int takeStep() {
 
   particles.resize_for_init_boundaries(nj*nk*mppc);
   // Add particles at inflow boundaries
-    initializeBoundaries_gpu<<<nj*nk/thrds_per_block+1, thrds_per_block>>>(
+  initializeBoundaries_gpu<<<(nj*nk)/thrds_per_block+1, thrds_per_block>>>(
+									 particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
                             particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
-                            rand4State_ptr, randState_5_ptr, randState_6_ptr) ;
-    cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
-    if(!pass) return -1;
-    particles.sort_particles_by_validity();
+									 particles.empty_raw_pointers,ni,nj,nk,vmean,vtemp,mppc, 
+									 rand4State_ptr, randState_5_ptr, randState_6_ptr) ;
+  cudaDeviceSynchronize();
+  cudaErrChk(cudaGetLastError(), "initializeBoundaries_gpu", pass);
+  if(!pass) return -1;
+  particles.sort_particles_by_validity();
 #ifdef DEBUG
-    printf("After initializeBoundaries_gpu...\n");
-    particles.print_size();
+  printf("After initializeBoundaries_gpu...\n");
+  particles.print_size();
 #ifdef DUMP_AFTER_INIT
-    particles.dump();
+  particles.dump();
 #else
+  particles.print_sample(1);
     particles.print_sample(1);    
-    particles.print_sample(4, particles.num_valid_particles-12, 6);
+  particles.print_sample(1);
+  particles.print_sample(4, particles.num_valid_particles-12, 6);
 #endif
 #endif
 
-    int blocks = particles.num_valid_particles / thrds_per_block + 1;
-    // Move particles
-    moveParticlesWithBCs_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers,deltaT,plate) ;
+  int blocks = particles.num_valid_particles / thrds_per_block + 1;
+  // Move particles
+  moveParticlesWithBCs_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers,deltaT,plate) ;
+  cudaDeviceSynchronize();
+  cudaErrChk(cudaGetLastError(), "moveParticlesWithBCs_gpu", pass);
+  if(!pass) return -1;
+
+#ifdef DEBUG
+  printf("After moveParticlesWithBCs...\n");
+  particles.print_sample();
+#endif
+
+  // particleVec = particles.get_valid_particles();
+  // Remove any particles that are now outside of boundaries
+  removeOutsideParticles_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers) ;
+  cudaDeviceSynchronize();
+  cudaErrChk(cudaGetLastError(), "removeOutsideParticles_gpu", pass);
+  if(!pass) return -1;
+
+  particles.sort_particles_by_validity();
+#ifdef DEBUG
+  printf("After removeOutsideParticles...\n");
+  particles.print_size();
+  particles.print_sample();
+#endif
+
+
+#ifdef DEBUG
+  printf("Num Blocks for indexParticles: %d\n",particles.num_valid_particles/ thrds_per_block+1);
+#endif
+  // Compute cell index for particles based on their current
+  // locations
+  indexParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
+											   particles.raw_pointers,ni,nj,nk) ;
+  cudaDeviceSynchronize();
+  cudaErrChk(cudaGetLastError(), "indexParticles_gpu", pass);
+  if(!pass) return -1;
+
+#ifdef DEBUG
+  printf("After indexParticles...\n");
+  particles.print_size();
+  particles.print_sample(2);
+
+#endif
+
+  // If time to reset cell samples, reinitialize data
+  if(n%sample_reset == 0 ) {
+    initializeSample_gpu<<<n(i*nj*nk)/thrds_per_block+1 ,thrds_per_block>>>(cellData_gpu.raw_pointers) ;
+    nsample = 0 ;
     cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "moveParticlesWithBCs_gpu", pass);
-    if(!pass) return -1;
-
-#ifdef DEBUG
-    printf("After moveParticlesWithBCs...\n");
-    particles.print_sample();
-#endif
-
-    // particleVec = particles.get_valid_particles();
-    // Remove any particles that are now outside of boundaries
-    removeOutsideParticles_gpu<<<blocks, thrds_per_block>>>(particles.raw_pointers) ;
-    cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "removeOutsideParticles_gpu", pass);
-    if(!pass) return -1;
-
-    particles.sort_particles_by_validity();
-#ifdef DEBUG
-    printf("After removeOutsideParticles...\n");
-    particles.print_size();
-    particles.print_sample();
-#endif
-
-
-#ifdef DEBUG
-    printf("Num Blocks for indexParticles: %d\n",particles.num_valid_particles/ thrds_per_block+1);
-#endif
-    // Compute cell index for particles based on their current
-    // locations
-    indexParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
-      particles.raw_pointers,ni,nj,nk) ;
-    cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "indexParticles_gpu", pass);
-    if(!pass) return -1;
-
-#ifdef DEBUG
-    printf("After indexParticles...\n");
-    particles.print_size();
-    particles.print_sample(2);
-
-#endif
-
-    // If time to reset cell samples, reinitialize data
-    if(n%sample_reset == 0 ) {
-      initializeSample_gpu<<<ni*nj*nk/thrds_per_block+1 ,thrds_per_block>>>(cellData_gpu.raw_pointers) ;
-      nsample = 0 ;
-      cudaDeviceSynchronize();
-      cudaErrChk(cudaGetLastError(), "initializeSample_gpu", pass);
-      if(!pass) return -1;
-#ifdef DEBUG
-      printf("After initializeSample...\n");
-      cellData_gpu.print_sample();
-#endif
-    }
-
-    // Sample particle information to cells
-    nsample++ ;
-    sampleParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
-      cellData_gpu.raw_pointers,particles.raw_pointers) ;
-    cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "sampleParticles_gpu", pass);
+    cudaErrChk(cudaGetLastError(), "initializeSample_gpu", pass);
     if(!pass) return -1;
 #ifdef DEBUG
-    printf("After sampleParticles...\n");
+    printf("After initializeSample...\n");
     cellData_gpu.print_sample();
 #endif
+  }
 
-    particle_count_map mapping(ni*nj*nk);
-    if(mapping.map_particles_to_cells(particles)) {
-      return -1;
-    }
+  // Sample particle information to cells
+  nsample++ ;
+  sampleParticles_gpu<<<particles.num_valid_particles/thrds_per_block+1, thrds_per_block>>>(
+	 cellData_gpu.raw_pointers,particles.raw_pointers) ;
+  cudaDeviceSynchronize();
+  cudaErrChk(cudaGetLastError(), "sampleParticles_gpu", pass);
+  if(!pass) return -1;
 #ifdef DEBUG
-    printf("After sort by index...\n"); // inside map()
-    particles.print_sample(2);
-
-    printf("After particle count mapping...\n");
-    mapping.print_size();
-    mapping.print_sample();      
+  printf("After sampleParticles...\n");
+  cellData_gpu.print_sample();
 #endif
 
-    // Compute particle collisions
-    collideParticles_gpu<<<mapping.num_occupied_cells/thrds_per_block + 1,thrds_per_block>>>(
-          particles.raw_pointers,collisionData_gpu.raw_pointers,
-          cellData_gpu.raw_pointers,nsample,cellvol,sigmak,
-          deltaT,pnum,mapping.raw_pointers,rand4State_ptr,
-          randState_5_ptr,randState_6_ptr) ;
-    cudaDeviceSynchronize();
-    cudaErrChk(cudaGetLastError(), "collideParticles_gpu", pass);
-    if(!pass) return -1;    
+  particle_count_map mapping(ni*nj*nk);
+  if(mapping.map_particles_to_cells(particles)) {
+    return -1;
+  }
 #ifdef DEBUG
-      printf("After collideParticles...\n");
+  printf("After sort by index...\n"); // inside map()
+  particles.print_sample(2);
+
+  printf("After particle count mapping...\n");
+  mapping.print_size();
+  mapping.print_sample();
+    mapping.print_sample();      
+  mapping.print_sample();
+#endif
+
+  // Compute particle collisions
+  collideParticles_gpu<<<mapping.num_occupied_cells/thrds_per_block + 1,thrds_per_block>>>(
+         particles.raw_pointers,collisionData_gpu.raw_pointers,
+	 cellData_gpu.raw_pointers,nsample,cellvol,sigmak,
+	 deltaT,pnum,mapping.raw_pointers,rand4State_ptr,
+	 randState_5_ptr,randState_6_ptr) ;
+  cudaDeviceSynchronize();
+  cudaErrChk(cudaGetLastError(), "collideParticles", pass);
+  if(!pass) return -1;
+    if(!pass) return -1;    
+  if(!pass) return -1;
+#ifdef DEBUG
+  printf("After collideParticles...\n");
+  particles.print_sample(4);  
       particles.print_sample(4);      
+  particles.print_sample(4);  
 #endif
 
   // print out progress
