@@ -212,7 +212,11 @@ void initializeBoundaries_gpu(
     double t = max(rand_results4.w, 1e-200);
     double speed = vtemp * sqrt(-log(t));
 
-    vect3d vel = randomDir(rand_result_5, rand_result_6);
+    //vect3d vel = randomDir(rand_result_5, rand_result_6);
+    double B = 2. * rand_result_5-1;
+    double A = sqrt(1.-B*B);
+    double theta = rand_result_6*2*M_PI;
+    float3 vel = {float(B), float(A*cos(theta)), float(A*sin(theta))} ;
 
     particles.vx[idx*mppc + m] = vel.x * speed + vmean;
     particles.vy[idx*mppc + m] = vel.y * speed;
@@ -401,16 +405,16 @@ void collideParticles_gpu(particle_gpu_raw particles,
         float vx1 = particles.vx[particle1_idx];
         float vy1 = particles.vy[particle1_idx];
         float vz1 = particles.vz[particle1_idx];
-        vect3d v1 = vect3d(vx1, vy1, vz1);
+        float3 v1 = {vx1, vy1, vz1};
 
         int particle2_idx = mapping.particle_offsets[idx]+pt2;
         float vx2 = particles.vx[particle2_idx];
         float vy2 = particles.vy[particle2_idx];
         float vz2 = particles.vz[particle2_idx];
-        vect3d v2 = vect3d(vx2, vy2, vz2);
+        float3 v2 = {vx2, vy2, vz2};
 
-        vect3d vr = v1-v2 ;
-        float vrm = norm(vr) ;
+        float3 vr = {v1.x-v2.x, v1.y-v2.y, v1.z-v2.z} ;
+        float vrm = norm3d(vr.x, vr.y, vr.z) ;
         // Compute collision  rate for hard sphere model
         float crate = sigmak*vrm ;
         if(crate > cmax)
@@ -419,13 +423,18 @@ void collideParticles_gpu(particle_gpu_raw particles,
         if(rand_results4.w < crate/collisionData.maxCollisionRate[cell_idx]) {
           // Collision Accepted, adjust particle velocities
           // Compute center of mass velocity, vcm
-          vect3d vcm = .5*(v1+v2) ;
+          float3 vcm = {0.5f*(v1.x+v2.x), 0.5f*(v1.y+v2.y), 0.5f*(v1.z+v2.z) } ;
           // Compute random perturbation that conserves momentum
-          vect3d vp = randomDir(rand_result_5, rand_result_6)*vrm ;
+
+          // float3 vp = randomDir(rand_result_5, rand_result_6)*vrm ;
+          double B = 2. * rand_result_5-1;
+          double A = sqrt(1.-B*B);
+          double theta = rand_result_6*2*M_PI;
+          float3 vp = {float(B), float(A*cos(theta)), float(A*sin(theta))} ;
 
           // Adjust particle velocities to reflect collision
-          vect3d new_v1 = vcm + 0.5*vp;
-          vect3d new_v2 = vcm - 0.5*vp;
+          float3 new_v1 = {vcm.x + 0.5f*vp.x, vcm.y + 0.5f*vp.y, vcm.z + 0.5f*vp.z} ;
+          float3 new_v2 = {vcm.x - 0.5f*vp.x, vcm.y - 0.5f*vp.y, vcm.z - 0.5f*vp.z} ;
 
           particles.vx[particle1_idx] = new_v1.x;
           particles.vy[particle1_idx] = new_v1.y;
