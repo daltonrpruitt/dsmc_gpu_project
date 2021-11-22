@@ -355,9 +355,9 @@ void collideParticles_gpu(particle_gpu_raw particles,
   int idx = threadIdx.x + blockIdx.x*blockDim.x;
   if(idx >= mapping.num_occupied_cells) return;
   int cell_idx = mapping.cell_idxs[idx];
-  curandStatePhilox4_32_10_t local_rand4 = rand4[idx];
-  curandState local_rand_5 = rand5[idx];
-  curandState local_rand_6 = rand6[idx];
+  curandStatePhilox4_32_10_t local_rand4 = rand4[cell_idx];
+  curandState local_rand_5 = rand5[cell_idx];
+  curandState local_rand_6 = rand6[cell_idx];
 
   // Do not need mapping generation, as have already
   // Loop over cells and select particles to perform collisions
@@ -449,9 +449,9 @@ void collideParticles_gpu(particle_gpu_raw particles,
       collisionData.maxCollisionRate[cell_idx] = cmax ;
     }
   }
-  rand4[idx] = local_rand4;
-  rand5[idx] = local_rand_5;
-  rand6[idx] = local_rand_6;
+  rand4[cell_idx] = local_rand4;
+  rand5[cell_idx] = local_rand_5;
+  rand6[cell_idx] = local_rand_6;
 }
 
 
