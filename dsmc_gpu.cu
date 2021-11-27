@@ -19,8 +19,8 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
-#define DEBUG
-#define DUMP_AFTER_INIT
+// #define DEBUG
+// #define DUMP_AFTER_INIT
 
 // Physical constant describing atom collision size
 const float sigmak = 1e-28 ; // collision cross section
