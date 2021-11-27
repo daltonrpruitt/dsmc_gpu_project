@@ -14,6 +14,8 @@
 #include <chrono>
 #include <thread>
 
+// #define NO_COLLISIONS
+
 using namespace std ;
 
 // Physical constant describing atom collision size
@@ -375,8 +377,11 @@ void takeStep(
     nsample++ ;
     sampleParticles(cellData,particleList) ;
     // Compute particle collisions
+
+#ifndef NO_COLLISIONS
     collideParticles(particleList,collisionData,cellData,nsample,
                      cellvol,deltaT) ;
+#endif
     // print out progress
     if((n&0xf) == 0) {
       cout << n << ' ' << particleList.size() << endl ;

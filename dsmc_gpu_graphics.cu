@@ -28,6 +28,8 @@
 
 // #define DEBUG
 // #define DUMP_AFTER_INIT
+// #define NO_COLLISIONS
+
 // Physical constant describing atom collision size
 const float sigmak = 1e-28 ; // collision cross section
 
@@ -761,6 +763,7 @@ int takeStep() {
   mapping.print_sample();
 #endif
 
+#ifndef NO_COLLISIONS
   // Compute particle collisions
   collideParticles_gpu<<<mapping.num_occupied_cells/thrds_per_block + 1,thrds_per_block>>>(
          particles.raw_pointers,collisionData_gpu.raw_pointers,
@@ -778,6 +781,8 @@ int takeStep() {
       particles.print_sample(4);      
   particles.print_sample(4);  
 #endif
+
+#endif // NO_COLLISIONS
 
   // print out progress
   if((n&0xf) == 0) {
