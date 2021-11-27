@@ -444,7 +444,11 @@ struct particle_count_map {
       for(int j=0; j<10; ++j) {
         int idx = i + j;
         if(idx >= num_cells) {break;}
-        printf("%5d:%-5d |",h_idxs[idx],h_counts[idx]);
+        if(idx < num_occupied_cells)
+          printf("%5d:%-5d|",h_idxs[idx],h_counts[idx]);
+        else  
+          printf("  -  :  -  |");
+        
       }
       printf("\n");
     }
@@ -455,7 +459,10 @@ struct particle_count_map {
       for(int j=0; j<10; ++j) {
         int idx = i + j;
         if(idx >= num_cells) {break;}
-        printf("%5d:%-5d |",h_idxs[idx],h_offsets[idx]);
+        if(idx < num_occupied_cells)
+          printf("%5d:%-5d|",h_idxs[idx],h_offsets[idx]);
+        else  
+          printf("  -  :  -  |");
       }
       printf("\n");
     }
