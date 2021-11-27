@@ -6,4 +6,11 @@ bin/*
 
 *.ods
 
-test*
+*test*
+
+compare*
+debug*
+
+*.ptx
+*lock*
+*debug*
