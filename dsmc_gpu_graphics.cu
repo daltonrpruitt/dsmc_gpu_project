@@ -191,7 +191,7 @@ void initializeBoundaries_gpu(
   if(idx >= nj * nk) return;
 
   double dx=2./float(ni),dy=2./float(nj),dz=2./float(nk) ;
-  int j = idx / nj;
+  int j = idx / nk;
   int k = idx % nk;
   double cx = -1-dx ;
   double cy = -1+float(j)*dy ;
