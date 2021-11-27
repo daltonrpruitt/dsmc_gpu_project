@@ -11,6 +11,9 @@
 #include "helper_gl.h"
 #include <GL/freeglut.h>
 
+#include <chrono>
+#include <thread>
+
 using namespace std ;
 
 // Physical constant describing atom collision size
@@ -65,7 +68,7 @@ int mouse_buttons = 0;
 float rotate_x = 0.0, rotate_y = 0.0;
 float translate_z = -3.0;
 bool pause = false;
-
+uint delay_ms = 0;
 
 GLuint edges_buffer;
 GLuint particles_buffer;
@@ -82,6 +85,7 @@ bool initGL(int *argc, char **argv);
 // rendering callbacks
 void display();
 void keyboard(unsigned char key, int x, int y);
+void catchKey(int key, int x, int y);
 void mouse(int button, int state, int x, int y);
 void motion(int x, int y);
 void timerEvent(int value);
@@ -582,6 +586,7 @@ bool initGL(int *argc, char **argv)
     glutCreateWindow("Cuda GL Interop (VBO)");
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
+    glutSpecialFunc(catchKey);
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
     glutTimerFunc(REFRESH_DELAY, timerEvent,0);
@@ -701,8 +706,10 @@ void copy_particles_to_buffer() {
 void display(){
     
     // timestep here?
-    if( (n<ntimesteps) & !pause)
+    if( (n<ntimesteps) & !pause) {
       takeStep();
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+    }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -786,6 +793,19 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
                 pause = !pause;
                 return;
     }
+}
+void catchKey(int key, int x, int y)
+{
+  switch (key)
+  {
+    case (GLUT_KEY_LEFT) :
+      if(delay_ms < 2000) delay_ms += 100;
+      return;
+    case (GLUT_KEY_RIGHT) :
+      if(delay_ms > 0) delay_ms -= 100;
+      if(delay_ms > 2500) delay_ms = 0;
+      return;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
