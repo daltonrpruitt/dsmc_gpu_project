@@ -825,7 +825,7 @@ bool initGL(int *argc, char **argv)
     glutInit(argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
     glutInitWindowSize(window_width, window_height);
-    glutCreateWindow("Cuda GL Interop (VBO)");
+    glutCreateWindow("DSMC - GPU");
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
     glutSpecialFunc(catchKey);
