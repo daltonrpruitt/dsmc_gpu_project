@@ -553,7 +553,7 @@ int main(int ac, char *av[]) {
 
 void save_output_data(){
   // Write out final particle data
-  ofstream ofile("particles.dat",ios::out) ;
+  ofstream ofile("particles_orig_graphics.dat",ios::out) ;
   list<particle>::iterator ii ;
 
   for(ii=particleList.begin();ii!=particleList.end();++ii) {
@@ -563,7 +563,7 @@ void save_output_data(){
   ofile.close() ;
   
   // Write out cell sampled data
-  ofstream ocfile("cells.dat", ios::out) ;
+  ofstream ocfile("cells_orig_graphics.dat", ios::out) ;
 
   for(size_t i=0;i<cellData.size();++i)
     ocfile << cellData[i].nparticles << ' '
