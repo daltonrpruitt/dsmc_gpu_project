@@ -24,13 +24,35 @@
             ],
             "preLaunchTask": "",
             "miDebuggerPath": "/usr/bin/gdb"
-        },
+        },    
+        {        
+        "name": "Debug dsmc_gpu_graphics",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/bin/dsmc_gpu_graphics",
+        "args": ["-2d", ">", "debug_dsmc_gpu_graphics.txt"],
+        "stopAtEntry": false,
+        "cwd": "${fileDirname}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        "preLaunchTask": "",
+        "miDebuggerPath": "/usr/bin/gdb"
+    },
+
         {
             "name": "Debug dsmc_orig",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/dsmc_orig",
-            "args": [],
+            "args": ["-ni","4", "-nj", "4", "-nk", "4","-mppc","50"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
