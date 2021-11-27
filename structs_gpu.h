@@ -569,20 +569,34 @@ struct cellSample_gpu {
     return slice(0, num_cells);
   }
 
-  void print_sample(){
+  void print_sample(int start_index = 0, int offset = 5) {
+    if(start_index >= num_cells) {
+      printf("Error in cellSample_gpu.print_sample() call!\n");
+      return;
+    }
     copy_device_to_host();
+    if( start_index < 0) start_index = 0;
     printf("idx: #particles,vel(x,y,z),energy\n");
-    for(int i=0; i<300; i+=50 ) {
-      if(i + 5 >= num_cells) {printf("   (End of valid values)\n"); return;}
+    for(int i=start_index; i<start_index+offset*4; i+=4) {
       for(int j=0; j<4; ++j) {
         int idx = i + j;
+        if(idx >= num_cells) break;
         printf("%4d: %2d,(%1.1e,%1.1e,%1.1e),%1.1e |",
           idx,h_nparticles[idx],h_vel_x[idx],h_vel_y[idx],h_vel_z[idx],h_energy[idx]);
       }
       printf("\n");
+      if(i >= num_cells) {printf("   (End of valid values)\n"); return;}
     }
     printf("\n");
   }
+
+  void dump() {
+    printf("Dumping all Cell Samples:\n");
+    for(int i=0; i<num_cells; i+=10*4) {
+      print_sample(i,10);
+    }
+  }
+
 
 } ;
 
@@ -639,18 +653,32 @@ struct collisionInfo_gpu {
     thrust::copy(d_collisionRemainder.begin(), d_collisionRemainder.end(), h_collisionRemainder.begin());
   }
 
-  void print_sample(){
+  void print_sample(int start_index = 0, int offset = 5) {
+    if(start_index >= num_cells) {
+      printf("Error in collissionInfo_gpu.print_sample() call!\n");
+      return;
+    }
+
     copy_device_to_host();
+    if( start_index < 0) start_index = 0;
     printf("idx: maxCollisionRate(*10^27),collisionRemainder\n");
-    for(int i=0; i<30; i+=6 ) {
-      for(int j=0; j<6; ++j) {
+    for(int i=start_index; i<start_index+offset*4; i+=4) {
+      for(int j=0; j<4; ++j) {
         int idx = i + j;
         if(idx >= num_cells){break;}
         printf("%4d: %1.5f,%1.5f |",idx,h_maxCollisionRate[idx]*1e27,h_collisionRemainder[idx]);
       }
       printf("\n");
-      if(i + 5 >= num_cells) {printf("   (End of valid values)\n"); return;}
+      if(i + 4 >= num_cells) {printf("   (End of valid values)\n"); return;}
     }
     printf("\n");
   }
+
+  void dump() {
+    printf("Dumping all Collisions Info:\n");
+    for(int i=0; i<num_cells; i+=10*4) {
+      print_sample(i,10);
+    }
+  }
+
 } ;
