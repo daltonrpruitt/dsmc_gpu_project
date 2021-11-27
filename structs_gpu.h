@@ -365,9 +365,13 @@ struct particle_gpu_h_d {
     printf("\n");
   }
 
-  void dump() {
-    printf("Dumping all particles:\n");
-    for(int i=0; i<total_spots; i+=6*4) {
+  void dump(bool only_valid = true) {
+
+    printf("Dumping all ");
+    if(only_valid) printf("valid ");
+    printf("particles:\n");
+    int spots = only_valid ? num_valid_particles : total_spots;
+    for(int i=0; i<spots; i+=6*4) {
       print_sample(1+2+4,i,6);
     }
   }
