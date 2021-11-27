@@ -396,7 +396,7 @@ struct particle_count_map {
   }
 
 
-  int map_particles_to_cells(particle_gpu_h_d particles) {
+  int map_particles_to_cells(particle_gpu_h_d& particles) {
     particles.sort_valid_particles_by_index(); // this is necessary since reduce_by_key() only reduces contiguously
 
     thrust::pair<IntIter, IntIter> map_ends;
