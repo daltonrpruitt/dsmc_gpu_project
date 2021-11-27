@@ -21,10 +21,43 @@
         },
         {
             "type": "process",
+            "label": "Make dsmc_gpu_graphics",
+            "command": "make",
+            "args": [
+                "dsmc_gpu_graphics"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "make should use compiler: /apps/gcc-8.3.0/gcc-8.3.0/bin/cpp"
+        },
+
+        {
+            "type": "process",
             "label": "Make dsmc_orig",
             "command": "make",
             "args": [
                 "dsmc_orig"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "make should use compiler: /apps/gcc-8.3.0/gcc-8.3.0/bin/cpp"
+        },        
+        {
+            "type": "process",
+            "label": "Make dsmc_orig_graphics",
+            "command": "make",
+            "args": [
+                "dsmc_orig_graphics"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
